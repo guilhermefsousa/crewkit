@@ -1,16 +1,20 @@
 import { install } from './install.js';
+import { update } from './update.js';
+import { add } from './add.js';
 
 const HELP = `
 crewkit — Context engineering for AI-assisted development
 
 Commands:
-  install    Install crewkit skill globally (~/.claude/skills/)
-  update     Update to latest version (re-run install)
-  help       Show this message
+  install       Install crewkit skill globally (~/.claude/skills/)
+  update        Update to latest version (re-run install)
+  add <skill>   Add an optional skill to the current project
+  help          Show this message
 
 Usage:
-  npx crewkit install    # one-time setup
-  /crewkit-setup         # run in your IDE to scan & calibrate a project
+  npx crewkit install          # one-time setup
+  npx crewkit add retro        # add optional skill to project
+  /crewkit-setup               # run in your IDE to scan & calibrate a project
 `;
 
 export function run(args) {
@@ -18,8 +22,13 @@ export function run(args) {
 
   switch (command) {
     case 'install':
-    case 'update':
       install();
+      break;
+    case 'update':
+      update();
+      break;
+    case 'add':
+      add(args[1]);
       break;
     case 'help':
     case '--help':

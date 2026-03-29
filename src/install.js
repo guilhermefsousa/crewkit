@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { cpSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,9 @@ export function install() {
 
   // Read version
   const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'));
+
+  // Write version marker
+  writeFileSync(join(skillDest, '.version'), pkg.version, 'utf8');
 
   console.log(`
   ✓ crewkit v${pkg.version} installed

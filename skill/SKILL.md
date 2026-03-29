@@ -142,6 +142,21 @@ For each stack, detect the build and test commands:
 
 Read `package.json` scripts, CI configs, or Makefiles to find the actual commands used in this project. Prefer project-specific over generic.
 
+### IDE Target Detection
+
+Detect which IDEs are in use or configured in this project:
+
+| IDE | Detection signals |
+|-----|------------------|
+| Claude Code | **Always** — this skill runs inside Claude Code |
+| GitHub Copilot | `.github/` directory exists OR `.github/copilot-instructions.md` found |
+| Cursor | `.cursor/` directory exists OR `.cursorrules` file found |
+
+Save all detected IDE targets to the scan data. Example:
+```
+IDE targets: Claude Code (always), GitHub Copilot (detected: .github/ exists), Cursor (not detected)
+```
+
 **Store results as: `ReconProfile`** — write to `.crewkit/scan-phase1-recon.md` for persistence.
 
 Report: "Phase 1 complete. Detected: [stacks], [CI], [DBs], [build/test commands]."
@@ -393,6 +408,9 @@ Compile all profiles into a single summary and present it to the user.
 - Build: `[command]`
 - Test: `[command]`
 - Dev server: `[command]` (if detected)
+
+## IDE Targets
+- [list each detected IDE — e.g., "Claude Code (always), GitHub Copilot (detected: .github/ exists)"]
 ```
 
 ### Save profile
@@ -976,6 +994,22 @@ For any placeholder tokens, add a comment in the profile or tell the user to fil
 
 ---
 
+### Step 10 — IDE Adapters
+
+If IDE targets beyond Claude Code were detected in Phase 1 (e.g., GitHub Copilot, Cursor):
+
+1. For each additional IDE target detected:
+   a. Determine the adapter file path: `~/.claude/skills/crewkit-setup/adapters/{ide}.md`
+      - GitHub Copilot → `adapters/copilot.md`
+      - Cursor → `adapters/cursor.md`
+   b. If the adapter file does not exist: WARN the user ("Adapter file not found for [IDE] — skipping") and continue to the next IDE. Do not fail.
+   c. If the adapter file exists: read it completely, then MANDATORY: follow ALL instructions in it. The adapter reads scan data from `.crewkit/last-scan.md` and uses the already-generated Claude Code files (Steps 1-9) as its source.
+2. If no additional IDE targets were detected, skip this step entirely.
+
+**Note:** The adapters do NOT duplicate `.ai/memory/` — that directory is shared across all IDEs without transformation.
+
+---
+
 ## Final Report
 
 After all generation steps, run the **Completion Checklist** (at the bottom of this document). Then present the summary:
@@ -994,7 +1028,7 @@ After all generation steps, run the **Completion Checklist** (at the bottom of t
 - `.claude/napkin.md` — priorities board
 - `.claude/QUICKSTART.md` — onboarding guide
 - `.mcp.json` — [N] MCP servers
-- Validation: [N]/15 checks passed
+- Validation: [N]/17 checks passed
 
 ## Commands detected
 - Build: `[command]`
@@ -1046,5 +1080,7 @@ Before presenting the Final Report, go through EVERY item. Fix failures before r
 - [ ] `.crewkit/last-scan.md` — exists with full profile including Domain section
 - [ ] `.crewkit/scan-phase*.md` — all 4 phase files exist with content
 - [ ] No Portuguese in any generated file (only in user-facing output)
+- [ ] If Copilot target detected: `.github/copilot-instructions.md` exists and contains the project hard rules
+- [ ] If Cursor target detected: `.cursor/rules/project.md` exists and has `alwaysApply: true` frontmatter
 
-Report checklist results as: "Validation: X/15 checks passed." If any failed, list which ones and why.
+Report checklist results as: "Validation: X/17 checks passed." If any failed, list which ones and why.

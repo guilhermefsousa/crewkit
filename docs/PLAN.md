@@ -153,11 +153,15 @@ crewkit/
 ├── package.json
 ├── bin/crewkit.js                    # CLI entry point
 ├── src/
-│   ├── cli.ts                        # arg parser (install, update)
-│   ├── install.ts                    # copia skill + templates pra ~/.claude/skills/
-│   └── update.ts                     # atualiza do npm registry
+│   ├── cli.js                        # arg parser (install, update, add, help)
+│   ├── install.js                    # copia skill + templates pra ~/.claude/skills/
+│   ├── update.js                     # compara versao + re-instala se diferente
+│   └── add.js                        # instala skill opcional do catalogo
 ├── skill/                            # o que vai pra ~/.claude/skills/crewkit-setup/
-│   ├── SKILL.md                      # /crewkit-setup (o coracao — faz TUDO)
+│   ├── SKILL.md                      # /crewkit-setup (o coracao — ~1086 linhas)
+│   ├── adapters/                     # adapters Multi-IDE (v0.2)
+│   │   ├── copilot.md               # gera arquivos GitHub Copilot
+│   │   └── cursor.md                # gera arquivos Cursor
 │   └── templates/                    # templates que a skill copia pro projeto
 │       ├── agents/
 │       │   ├── explorer.md
@@ -171,12 +175,14 @@ crewkit/
 │       │   ├── post-compact-recovery.sh
 │       │   └── stop-quality-gate.sh
 │       └── skills/
-│           ├── full-workflow/SKILL.md
-│           ├── hotfix/SKILL.md
-│           ├── explore-and-plan/SKILL.md
-│           └── review-pr/SKILL.md
-├── tests/
-│   └── ...
+│           ├── full-workflow/SKILL.md    # core
+│           ├── hotfix/SKILL.md           # core
+│           ├── explore-and-plan/SKILL.md # core
+│           ├── review-pr/SKILL.md        # core (com fallback GitLab/git)
+│           ├── retro/SKILL.md            # opcional (v0.2)
+│           ├── dev-metrics/SKILL.md      # opcional (v0.2)
+│           ├── security-scan/SKILL.md    # opcional (v0.2)
+│           └── impact/SKILL.md           # opcional (v0.2)
 └── README.md
 ```
 
@@ -431,7 +437,7 @@ Skill /crewkit-setup (o coracao — 1050 linhas):
 - [x] QUICKSTART.md gerado como onboarding guide
 - [x] Business domain no profile e no CLAUDE.md
 - [x] Targeted extractions → rules (SQL injection, state machines, large files)
-- [x] Completion checklist com 15 items (content + validation + integrity)
+- [x] Completion checklist com 17 items (content + validation + integrity + IDE adapters)
 - [x] Language rule: todos os arquivos em ingles, output pro usuario no idioma dele
 - [x] Zero questions (exceto re-run [R]/[M]/[C])
 
@@ -481,25 +487,39 @@ Limitacoes conhecidas v0.1:
 **Tarefas:**
 
 Adapters:
-- [ ] Adapter GitHub Copilot (copilot-instructions.md, instructions/*.instructions.md, agents/*.agent.md, prompts/*.prompt.md)
-- [ ] Adapter Cursor (rules/*.md com frontmatter description+globs, AGENTS.md)
-- [ ] Skill detecta IDE e gera pro target correto (ou todos se multiplos)
-- [ ] Adapters ignoram frontmatter `model:` (Claude Code only)
+- [x] Adapter GitHub Copilot — `skill/adapters/copilot.md` (239 linhas, gera copilot-instructions.md, agents, prompts, instructions)
+- [x] Adapter Cursor — `skill/adapters/cursor.md` (215 linhas, gera rules com globs, AGENTS.md)
+- [x] Skill detecta IDE (Phase 1) e roteia geracao (Phase 7 Step 10)
+- [x] Adapters ignoram frontmatter `model:` (Claude Code only)
+- [x] Decisao arquitetural: Option B (adapters em arquivos separados, nao inline no SKILL.md)
 
 CLI extras:
-- [ ] `crewkit update` — baixa templates mais recentes do npm
-- [ ] `crewkit add <skill>` — instala skill do catalogo
-- [ ] Catalogo de skills (skills.yaml com metadata)
+- [x] `crewkit update` — compara versao instalada vs npm, mostra transicao vOLD → vNEW (`src/update.js`)
+- [x] `crewkit add <skill>` — copia skill opcional do catalogo global pro projeto (`src/add.js`)
+- [ ] ~~Catalogo de skills (skills.yaml com metadata)~~ — DESCARTADO: filesystem presence suficiente pra 4-5 skills
 
 Skills adicionais:
-- [ ] retro (post-mortem)
-- [ ] dev-metrics (metricas de git)
-- [ ] security-scan
-- [ ] impact (blast radius)
+- [x] retro (post-mortem) — `skill/templates/skills/retro/SKILL.md`
+- [x] dev-metrics (metricas de git) — `skill/templates/skills/dev-metrics/SKILL.md`
+- [x] security-scan — `skill/templates/skills/security-scan/SKILL.md`
+- [x] impact (blast radius) — `skill/templates/skills/impact/SKILL.md`
+- [ ] ~~health-check~~ — diferido pra v0.3 (requer config de infra)
+- [ ] ~~playwright-cli~~ — diferido pra v0.3 (requer browser runtime)
+
+Melhorias:
+- [x] review-pr fallback GitLab (`glab`) + pure git diff
+- [x] README bilíngue (PT-BR + EN)
+- [x] `.version` marker em ~/.claude/skills/crewkit-setup/
+- [x] SKILL.md checklist atualizado 15 → 17 items (IDE adapter checks)
+- [x] package.json version bump 0.1.0 → 0.2.0
 
 Validacao:
-- [ ] Testar geracao Copilot num projeto real
-- [ ] Testar geracao Cursor num projeto real
+- [x] CLI testada (install, update, add — todos os cenarios)
+- [x] Regression test Relivox (worktree isolado — 12/17 checks, 5 bloqueados por hook do Relivox, nao do crewkit)
+- [ ] Testar geracao Copilot num projeto real com VS Code + Copilot
+- [ ] Testar geracao Cursor num projeto real com Cursor IDE
+- [ ] Testar em repo open source Node.js (Express/Next.js)
+- [ ] Testar em repo open source Go
 - [ ] Publicar v0.2.0 no npm
 
 ### v0.3 — Polish + observabilidade

@@ -1,6 +1,6 @@
 {
   "name": "crewkit",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Context engineering framework for AI-assisted development. One command to set up agents, skills, hooks, rules, and memory for your project.",
   "type": "module",
   "bin": {
