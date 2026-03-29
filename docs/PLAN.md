@@ -410,51 +410,69 @@ Templates ficam em `~/.claude/skills/crewkit-setup/templates/`. A skill usa `~/`
 **Tarefas:**
 
 npm package (CLI minimo — so copia arquivos):
-- [x] Criar repo `crewkit` (local, falta push pro GitHub)
+- [x] Criar repo `crewkit` no GitHub (github.com/guilhermefsousa/crewkit)
 - [x] Setup npm package (package.json, bin entry) — JS nao TS
 - [x] CLI `install`: copia skill/ pra ~/.claude/skills/crewkit-setup/
-- [ ] CLI `update`: re-copia do npm registry (v0.1 pode ser manual)
+- [ ] CLI `update`: re-copia do npm registry (v0.2)
 
-Skill /crewkit-setup (o coracao — arquivo mais critico do projeto):
-- [x] SKILL.md com pre-flight + Phase 0 + 8 fases (817 linhas)
-- [x] Pre-flight: check modelo, detectar re-run, oferecer [R]/[M]/[C]
+Skill /crewkit-setup (o coracao — 1050 linhas):
+- [x] SKILL.md com pre-flight + Phase 0 + 7 fases + 9 steps de geracao + completion checklist
+- [x] Pre-flight: check modelo (warn Haiku, no question), re-run [R]/[M]/[C]
 - [x] Phase 0: backup, criar pastas, .crewkit/version, .gitignore
-- [x] Fase 1-3 inline (recon, docs, structure)
-- [x] Fase 4 via agents paralelos por modulo (explorer subagents)
-- [x] Fase 6 apresentacao do profile + salva em .crewkit/last-scan.md
-- [x] Fase 7 geracao em ordem de falha graceful (memory → CLAUDE.md → agents → rules → settings → hooks → skills → .mcp.json)
-- [x] Modo [M] (memory-only): so escreve memory + CLAUDE.md, preserva resto
+- [x] Fase 1-3 inline (recon, docs com AI context de outras IDEs, structure)
+- [x] Fase 4 via agents paralelos + 6 targeted extractions (DI sigs, fakes, design system, state machines, large files, raw SQL)
+- [x] Fase 6 apresentacao do profile com Domain section + salva em .crewkit/last-scan.md
+- [x] Fase 7 geracao em ordem de falha graceful (memory → CLAUDE.md → agents → rules → settings → hooks → skills → QUICKSTART.md → .mcp.json)
+- [x] Modo [M] (memory-only): escreve memory + CLAUDE.md + atualiza agent context headers
 - [x] Deteccao de 12 MCPs (11 detectaveis + Context7 always)
+- [x] Scan persistence: 4 phase files em .crewkit/ sobrevivem /compact
+- [x] Context headers nos agents (crewkit:context-start/end)
+- [x] Permissoes dinamicas: 4 layers (universal + stack + infra + MCP)
+- [x] QUICKSTART.md gerado como onboarding guide
+- [x] Business domain no profile e no CLAUDE.md
+- [x] Targeted extractions → rules (SQL injection, state machines, large files)
+- [x] Completion checklist com 15 items (content + validation + integrity)
+- [x] Language rule: todos os arquivos em ingles, output pro usuario no idioma dele
+- [x] Zero questions (exceto re-run [R]/[M]/[C])
 
 Templates (arquivos no disco, lidos pela skill na Fase 7):
-- [x] 5 agents universais (explorer, architect, coder, tester, reviewer) — stack-agnostic, referenciam .ai/memory/
-- [x] 4 hooks universais (com {{project_dir}}, {{hard_rules}}, {{build_gate}}) — POSIX-compatible
+- [x] 5 agents universais — stack-agnostic, referenciam .ai/memory/
+- [x] 4 hooks universais (com {{project_dir}}, {{hard_rules}}, {{build_gate}}) — POSIX-compatible (sed, nao grep -P)
 - [x] 4 core skills (full-workflow, hotfix, explore-and-plan, review-pr) — stack-agnostic
-- [x] settings.json template inline no SKILL.md (com {{build_cmd}}, {{test_cmd}})
+- [x] settings.json template inline no SKILL.md (4 layers dinamicas)
 - [x] napkin.md template inline no SKILL.md
+- [x] QUICKSTART.md template inline no SKILL.md
 
-Auditoria cruzada (2026-03-28):
+Auditorias cruzadas (2026-03-28 a 2026-03-29):
 - [x] 3 CRITICAL fixados (phantom placeholders, grep -oP macOS)
-- [x] 12 IMPORTANT fixados (memory refs, return formats, classification correction, stack config, etc.)
-- [x] 8 MINOR fixados (prioritization rules, full suite field, deep exploration items, etc.)
-- [x] Placeholder audit: 100% limpo (3 template + 2 instruction + 8 user-facing, zero mismatches)
-- [x] .ai/memory/ cross-ref: todos os 7 arquivos gerados sao consumidos por templates
-- [x] Agent-skill consistency: nomes, models, severity, modes — todos MATCH
-- [x] SKILL.md vs plano: 7/7 fases, 15/15 decisoes, 12/12 MCPs, 13/13 riscos mitigados
+- [x] 12 IMPORTANT fixados (memory refs, return formats, classification correction, stack config)
+- [x] 8 MINOR fixados (prioritization rules, full suite field, deep exploration items)
+- [x] Placeholder audit: 100% limpo — zero mismatches, zero orphans, zero phantoms
+- [x] .ai/memory/ cross-ref: todos os 7 arquivos gerados consumidos por templates
+- [x] Agent-skill consistency: nomes, models, severity, modes — MATCH
+- [x] SKILL.md vs plano: 7/7 fases, 15/15 decisoes, 12/12 MCPs, 13/13 riscos
+- [x] Deteccao→output audit: todos os 6 targeted extractions tem saida em memory + rules
+- [x] Zero contradicoes, zero redundancias no documento final
 
-Pendencias pre-publicacao:
-- [ ] README.md do repo crewkit
-- [ ] Criar repo no GitHub e push
-- [ ] review-pr: fallback generico pra GitLab/Bitbucket (git diff puro se nao tem `gh`) — v0.1 GitHub-only, documentar limitacao
-- [ ] SKILL.md tem 817 linhas (plano alerta >500) — monitorar estabilidade, splittar se instavel
+Publicacao:
+- [x] README.md
+- [x] Push pro GitHub (branch main, 1 commit)
+- [x] Publicado no npm: crewkit@0.1.0 (2026-03-29)
+- [x] `npx crewkit install` testado do registry — funciona
 
-Validacao (em projetos que NAO sao nossos):
-- [ ] Testar `npx crewkit install` (copia pro ~/.claude/skills/)
-- [ ] Testar `/crewkit-setup` no Relivox (.NET + Node.js + Blazor) — sanity check
-- [ ] Testar num repo open source Python (FastAPI/Django)
-- [ ] Testar num repo open source Node.js (Express/Next.js)
-- [ ] Testar num repo open source Go (se possivel)
-- [ ] Publicar v0.1.0 no npm
+Validacao (4 testes executados):
+- [x] Relivox v1 (.NET + Node.js + Blazor) — score 6.0/10
+- [x] Relivox v2 (apos fixes) — score 7.5/10
+- [x] Relivox v3 (apos improvements) — score 7.5/10 (3/7 improvements nao executados pelo AI)
+- [x] Relivox v4 (final) — score 8.2/10 (targeted extractions, context headers, persistence)
+- [x] FastAPI (Python puro, open source) — score 10/10 (stack-agnostic validado)
+- [ ] Testar num repo open source Node.js (Express/Next.js) — v0.2
+- [ ] Testar num repo open source Go — v0.2
+
+Limitacoes conhecidas v0.1:
+- review-pr: GitHub-only (usa `gh` CLI) — v0.2 tera fallback GitLab/Bitbucket
+- SKILL.md tem 1050 linhas — risco de AI pular checklist final. Monitorar, splittar se instavel
+- Conhecimento institucional (bugs conhecidos, production ops) nao e capturavel por scan — gap esperado e documentado
 
 ### v0.2 — Multi-IDE + extras
 
