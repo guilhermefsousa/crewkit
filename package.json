@@ -1,0 +1,37 @@
+{
+  "name": "crewkit",
+  "version": "0.1.0",
+  "description": "Context engineering framework for AI-assisted development. One command to set up agents, skills, hooks, rules, and memory for your project.",
+  "type": "module",
+  "bin": {
+    "crewkit": "bin/crewkit.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skill"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test tests/"
+  },
+  "keywords": [
+    "context-engineering",
+    "ai",
+    "claude-code",
+    "copilot",
+    "cursor",
+    "agents",
+    "skills",
+    "mcp",
+    "developer-tools"
+  ],
+  "author": "Guilherme Sousa",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
