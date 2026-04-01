@@ -901,17 +901,22 @@ Write calibrated hooks to `.claude/hooks/`.
 
 ---
 
-### Step 7 — `.claude/skills/` (templates, copied directly)
+### Step 7 — `.claude/skills/` (templates + references)
 
-Read all 4 core skill templates from `~/.claude/skills/crewkit-setup/templates/skills/`:
-- `full-workflow/SKILL.md`
+Read all core skill templates from `~/.claude/skills/crewkit-setup/templates/skills/`:
+- `full-workflow/SKILL.md` + `full-workflow/references/`
 - `hotfix/SKILL.md`
 - `explore-and-plan/SKILL.md`
 - `review-pr/SKILL.md`
 
-Copy each skill template to `.claude/skills/[name]/SKILL.md`.
+Copy each skill template to `.claude/skills/[name]/SKILL.md`. **If the template has a `references/` subdirectory, copy it too.**
 
 These skill templates are **stack-agnostic** by design — they reference `.ai/memory/commands.md` for build/test commands and `.ai/memory/` for project context. No variable substitution needed.
+
+**Skill design principle — inline vs. references:**
+- **Inline** in SKILL.md: content needed on every invocation (commands, classification tables, return format)
+- **`references/`**: content needed only on certain branches (fix loop policies, stack-specific adapters, error catalogs). The SKILL.md tells the agent WHEN to load each reference.
+- Never extract always-needed content to references — it adds tool calls without benefit.
 
 ---
 

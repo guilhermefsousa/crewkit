@@ -47,6 +47,7 @@ If your project uses `.claude/rules/` directory rules, they are loaded automatic
 - Do not create a new file when adding to an existing file achieves the same goal
 - Do not add `TODO` comments — either fix it now or leave it for the plan
 - **NEVER create test files** — test creation is the **tester agent's exclusive responsibility**
+- **NEVER mark phases, tasks, or features as completed** in `napkin.md`, `state.md`, or any memory/status file — only the orchestrator does this, and only after tester PASS + reviewer APPROVED
 
 ## Return Format
 
