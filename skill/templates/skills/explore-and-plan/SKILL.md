@@ -52,16 +52,29 @@ Use **architect** with explorer findings. Must return:
 
 **The architect must NOT produce the plan.** Only analysis and decisions.
 
-### 3. Present decisions — MANDATORY PAUSE
+### 3. Present decisions — MANDATORY PAUSE (one-by-one)
 
-**DO NOT create the plan yet.** Present to user:
-- Each decision with options, pros/cons, recommendation
-- Required vs compromise vs debt
-- Task size and key risks
-- Technical verdict
-- Ask user to confirm or override each decision
+**DO NOT create the plan yet.**
 
-**Wait for user response.**
+First, present a brief summary: task size, technical verdict, total number of decisions, and key risks. Then present decisions **one at a time**, waiting for user response before showing the next.
+
+**For each decision:**
+1. **Name the decision** clearly (e.g., "D1: How to store the onboarding flag")
+2. **Explain what it solves** — 1-2 sentences so the user understands WHY this decision matters
+3. **Present options as a table** with Pros and Cons columns
+4. **Explain the practical difference** — not abstract architecture, but what concretely changes for the user/system with each option
+5. **State your recommendation** with a clear prompt (e.g., "Go with A?")
+6. **Wait for the user to respond** before presenting the next decision
+
+**Rules:**
+- ONE decision per message. Never batch multiple decisions.
+- If the user agrees, confirm and move to the next immediately.
+- If the user disagrees, acknowledge the override and record it. Then move to the next.
+- If the user asks for more detail, explain further before asking again.
+- After ALL decisions are confirmed, show a complete summary table.
+- If scope is large, ask about scope reduction early (D1 or D2) since it affects all subsequent decisions.
+
+**Wait for ALL decisions to be resolved before proceeding to step 4.**
 
 ### 4. Create plan file (after confirmation)
 
