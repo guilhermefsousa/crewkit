@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [package.json]
 
 permissions:
   contents: write
@@ -12,35 +11,39 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
-
-      - name: Check version change
-        id: version
-        run: |
-          NEW=$(node -p "require('./package.json').version")
-          OLD=$(git show HEAD~1:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version" 2>/dev/null || echo "")
-          echo "new=$NEW" >> "$GITHUB_OUTPUT"
-          if [ "$NEW" != "$OLD" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v5
-        if: steps.version.outputs.changed == 'true'
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
+      - name: Determine bump type
+        id: bump
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          if echo "$MSG" | grep -qi '\[major\]'; then
+            echo "type=major" >> "$GITHUB_OUTPUT"
+          elif echo "$MSG" | grep -qi '\[minor\]'; then
+            echo "type=minor" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=patch" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version ${{ steps.bump.outputs.type }} -m "release: v%s [skip ci]"
+
       - name: Publish
-        if: steps.version.outputs.changed == 'true'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create tag
-        if: steps.version.outputs.changed == 'true'
-        run: |
-          git tag "v${{ steps.version.outputs.new }}"
-          git push origin "v${{ steps.version.outputs.new }}"
+      - name: Push version and tag
+        run: git push --follow-tags
