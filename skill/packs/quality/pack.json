@@ -1,0 +1,7 @@
+{
+  "name": "quality",
+  "description": "Code review, blast radius analysis, and post-mortems",
+  "components": {
+    "skills": ["review-pr", "impact", "retro"]
+  }
+}

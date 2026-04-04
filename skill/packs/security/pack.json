@@ -1,0 +1,7 @@
+{
+  "name": "security",
+  "description": "OWASP vulnerability scanning and security hardening",
+  "components": {
+    "skills": ["security-scan"]
+  }
+}

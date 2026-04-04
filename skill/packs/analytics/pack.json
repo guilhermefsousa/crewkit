@@ -1,0 +1,7 @@
+{
+  "name": "analytics",
+  "description": "Development metrics and post-mortem analysis",
+  "components": {
+    "skills": ["dev-metrics", "retro"]
+  }
+}
