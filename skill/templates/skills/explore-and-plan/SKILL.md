@@ -46,6 +46,7 @@ Use **architect** with explorer findings. Must return:
 - Open decisions with options, pros/cons, recommendation
 - Trade-off classification (required / compromise / debt / convenience)
 - Pushback on weak approaches
+- **Verify decision compatibility:** If the task has both "where" (location/route) and "how" (mechanism/interaction) decisions, verify they are compatible BEFORE presenting them separately. If choosing location A eliminates mechanism B, say so explicitly.
 - Risk assessment and blast radius
 - Task size (SMALL / MEDIUM / LARGE)
 - Technical verdict (APPROVE / APPROVE WITH CHANGES / DO NOT APPROVE)
