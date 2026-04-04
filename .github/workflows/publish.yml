@@ -15,35 +15,44 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Determine bump type
-        id: bump
+      - name: Determine next version
+        id: version
         run: |
-          MSG="${{ github.event.head_commit.message }}"
-          if echo "$MSG" | grep -qi '\[major\]'; then
-            echo "type=major" >> "$GITHUB_OUTPUT"
-          elif echo "$MSG" | grep -qi '\[minor\]'; then
-            echo "type=minor" >> "$GITHUB_OUTPUT"
-          else
-            echo "type=patch" >> "$GITHUB_OUTPUT"
+          LATEST=$(git tag --sort=-v:refname | grep '^v' | head -1 | sed 's/^v//')
+          if [ -z "$LATEST" ]; then
+            LATEST="0.0.0"
           fi
 
-      - name: Bump version
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version ${{ steps.bump.outputs.type }} -m "release: v%s [skip ci]"
+          MSG="${{ github.event.head_commit.message }}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST"
 
-      - name: Publish
-        run: npm publish
+          if echo "$MSG" | grep -qi '\[major\]'; then
+            MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+          elif echo "$MSG" | grep -qi '\[minor\]'; then
+            MINOR=$((MINOR + 1)); PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEXT="$MAJOR.$MINOR.$PATCH"
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "Bumping $LATEST -> $NEXT"
+
+      - name: Set version and publish
+        run: |
+          npm version ${{ steps.version.outputs.next }} --no-git-tag-version
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Push version and tag
-        run: git push --follow-tags
+      - name: Create tag
+        run: |
+          git tag "v${{ steps.version.outputs.next }}"
+          git push origin "v${{ steps.version.outputs.next }}"
