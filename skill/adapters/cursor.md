@@ -3,7 +3,10 @@
 This adapter is executed during Phase 7, Step 10 of `/crewkit-setup`.
 You are the AI. Follow every instruction in this file to generate Cursor-compatible context files.
 
-**Input:** Read `.crewkit/last-scan.md` for the project profile. The Claude Code files generated in Steps 1-9 are your source of truth.
+**Input (two modes):**
+- **With Claude files:** If `CLAUDE.md` and `.claude/` exist (Claude Code was also a target), use them as primary source and reformat for Cursor.
+- **Standalone:** If Claude files do NOT exist, generate directly from `.crewkit/last-scan.md` (project profile) + `.ai/memory/` (architecture, conventions, commands). This is the primary source of truth.
+
 **Output:** Files under `.cursor/rules/` and `AGENTS.md` at the project root.
 
 ---
@@ -20,8 +23,8 @@ You are the AI. Follow every instruction in this file to generate Cursor-compati
 
 ## Step U1 — `.cursor/rules/project.md`
 
-**Source:** `CLAUDE.md`
-**Transformation:** Reformat for Cursor. Add required frontmatter. Remove agent/skill/hook sections that are Claude Code-specific.
+**Source:** `CLAUDE.md` if it exists, otherwise `.crewkit/last-scan.md` + `.ai/memory/conventions.md`
+**Transformation:** If using CLAUDE.md, reformat for Cursor — add required frontmatter, remove agent/skill/hook sections. If generating from scan data, create the content directly using the project profile and conventions.
 
 **Required Cursor frontmatter:**
 ```markdown
@@ -93,8 +96,8 @@ Always return:
 
 ## Step U2 — `.cursor/rules/*.md`
 
-**Source:** `.claude/rules/*.md`
-**Transformation:** Convert frontmatter to Cursor format. Keep glob patterns and all rule content unchanged.
+**Source:** `.claude/rules/*.md` if they exist, otherwise generate directly from scan data (detected stacks + HIGH/MEDIUM confidence patterns).
+**Transformation:** If using Claude rules, convert frontmatter to Cursor format — keep glob patterns and rule content unchanged. If generating from scan data, create one rules file per detected stack with appropriate glob patterns and rules.
 
 Claude Code frontmatter format:
 ```markdown
@@ -150,8 +153,8 @@ globs: "**/*.py"
 
 ## Step U3 — `AGENTS.md` (project root)
 
-**Source:** All `.claude/agents/*.md` files
-**Transformation:** Concatenate all agents into a single markdown file with `##` sections. Strip `model:` frontmatter from each. Remove the `<!-- crewkit:context-start -->...<!-- crewkit:context-end -->` block from each agent. Keep the `name:` and `description:` from frontmatter and all agent instructions.
+**Source:** `.claude/agents/*.md` if they exist, otherwise generate directly from the agent templates at `~/.claude/skills/crewkit-setup/templates/agents/` (or from scan data if templates are unavailable).
+**Transformation:** Concatenate all agents into a single markdown file with `##` sections. Strip `model:` frontmatter from each. Remove the `<!-- crewkit:context-start -->...<!-- crewkit:context-end -->` block from each agent. Keep the `name:` and `description:` from frontmatter and all agent instructions. When generating from templates, inject project context from `.crewkit/last-scan.md` into each agent.
 
 **Output format:**
 ```markdown

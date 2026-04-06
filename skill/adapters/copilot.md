@@ -3,8 +3,11 @@
 This adapter is executed during Phase 7, Step 10 of `/crewkit-setup`.
 You are the AI. Follow every instruction in this file to generate GitHub Copilot-compatible context files.
 
-**Input:** Read `.crewkit/last-scan.md` for the project profile. The Claude Code files generated in Steps 1-9 are your source of truth.
-**Output:** Files under `.github/` that mirror the Claude Code setup for GitHub Copilot.
+**Input (two modes):**
+- **With Claude files:** If `CLAUDE.md` and `.claude/` exist (Claude Code was also a target), use them as primary source and reformat for Copilot.
+- **Standalone:** If Claude files do NOT exist, generate directly from `.crewkit/last-scan.md` (project profile) + `.ai/memory/` (architecture, conventions, commands). This is the primary source of truth.
+
+**Output:** Files under `.github/` — GitHub Copilot-native context files.
 
 ---
 
@@ -20,15 +23,15 @@ You are the AI. Follow every instruction in this file to generate GitHub Copilot
 
 ## Step C1 — `.github/copilot-instructions.md`
 
-**Source:** `CLAUDE.md`
-**Transformation:** Reformat for Copilot. Remove the Agent Discipline, Skills (slash commands), Architect Decision Gate, and Test Safety Loop sections — these are Claude Code-specific orchestration mechanics that do not apply to Copilot. Keep the hard rules, overview, memory loading instructions, and output format.
+**Source:** `CLAUDE.md` if it exists, otherwise `.crewkit/last-scan.md` + `.ai/memory/conventions.md`
+**Transformation:** If using CLAUDE.md, reformat for Copilot — remove Agent Discipline, Skills (slash commands), Architect Decision Gate, and Test Safety Loop sections (Claude Code-specific). Keep hard rules, overview, memory loading instructions, and output format. If generating from scan data, create the content directly using the project profile and conventions.
 
 **Expected output format:**
 ```markdown
 # [PROJECT NAME] — Copilot Instructions
 
 ## Overview
-[1-2 sentences from CLAUDE.md overview — what the project is, main stack]
+[1-2 sentences — what the project is, main stack]
 [Business domain: what it does, core entities, risk profile]
 
 **Stack:** [stacks]
@@ -38,7 +41,7 @@ You are the AI. Follow every instruction in this file to generate GitHub Copilot
 
 ## Hard rules (apply to every response)
 
-[Numbered list — copy from CLAUDE.md hard rules verbatim. These are non-negotiable.]
+[Numbered list of non-negotiable rules — from CLAUDE.md or from HIGH confidence patterns in scan data.]
 
 1. [Rule 1]
 2. [Rule 2]
@@ -85,8 +88,8 @@ Always return:
 
 ## Step C2 — `.github/instructions/*.instructions.md`
 
-**Source:** `.claude/rules/*.md`
-**Transformation:** Convert frontmatter to Copilot format. Keep glob patterns and all rule content unchanged.
+**Source:** `.claude/rules/*.md` if they exist, otherwise generate directly from scan data (detected stacks + HIGH/MEDIUM confidence patterns).
+**Transformation:** If using Claude rules, convert frontmatter to Copilot format — keep glob patterns and rule content unchanged. If generating from scan data, create one instructions file per detected stack with appropriate glob patterns and rules.
 
 Claude Code frontmatter format:
 ```markdown
@@ -142,8 +145,8 @@ applyTo: "src/**/*.{js,ts}"
 
 ## Step C3 — `.github/agents/*.agent.md`
 
-**Source:** `.claude/agents/*.md`
-**Transformation:** Strip `model:` frontmatter line. Keep `name:` and `description:`. Remove the `<!-- crewkit:context-start -->...<!-- crewkit:context-end -->` block — Copilot agents do not use this inline context injection. Keep the full agent role description and instructions.
+**Source:** `.claude/agents/*.md` if they exist, otherwise generate directly from the agent templates at `~/.claude/skills/crewkit-setup/templates/agents/` (or from scan data if templates are unavailable).
+**Transformation:** Strip `model:` frontmatter line. Keep `name:` and `description:`. Remove the `<!-- crewkit:context-start -->...<!-- crewkit:context-end -->` block — Copilot agents do not use this inline context injection. Keep the full agent role description and instructions. When generating from templates, inject project context from `.crewkit/last-scan.md` into each agent.
 
 **Copilot agent frontmatter format:**
 ```markdown
