@@ -7,7 +7,7 @@ const HELP = `
 crewkit — Context engineering for AI-assisted development
 
 Commands:
-  install       Install crewkit skill globally (~/.claude/skills/)
+  install       Install crewkit globally (Claude Code, Cursor, or VS Code)
   update        Update to latest version (re-run install)
   add <name>    Add an optional skill or pack to the current project
   list          List all available skills and packs (core + add-ons)
@@ -26,11 +26,12 @@ export function run(args) {
 
   switch (command) {
     case 'install':
-      install();
-      break;
+      install().catch(err => { console.error(err.message); process.exit(1); });
+      return;
+
     case 'update':
-      update();
-      break;
+      update().catch(err => { console.error(err.message); process.exit(1); });
+      return;
     case 'add':
       add(args[1]);
       break;
