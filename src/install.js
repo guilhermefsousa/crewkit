@@ -16,17 +16,17 @@ function installClaude(target, version) {
   mkdirSync(target.dest, { recursive: true });
   cpSync(skillSource, target.dest, { recursive: true, force: true });
   writeFileSync(target.versionFile, version, 'utf8');
-  console.log(`  ✓ Claude Code  →  ${target.dest}`);
-  console.log(`\n  Next: open any project in Claude Code and run:\n\n    /crewkit-setup\n`);
+  console.log(`  ✓ Claude Code       →  ${target.dest}`);
+  console.log(`    Run /crewkit-setup in any project\n`);
 }
 
-function installSingleFile(target, templateFile, outputFile, label, nextSteps, version) {
+function installSingleFile(target, templateFile, outputFile, label, hint, version) {
   const template = join(__dirname, '..', 'skill', templateFile);
   mkdirSync(target.dest, { recursive: true });
   copyFileSync(template, join(target.dest, outputFile));
   writeFileSync(target.versionFile, version, 'utf8');
   console.log(`  ✓ ${label}  →  ${join(target.dest, outputFile)}`);
-  console.log(`\n  ${nextSteps}\n`);
+  console.log(`    ${hint}\n`);
 }
 
 export async function install() {
@@ -37,7 +37,7 @@ export async function install() {
     console.log(`
   No supported AI tools detected.
 
-  crewkit supports: Claude Code (~/.claude), Cursor (~/.cursor), GitHub Copilot (VS Code).
+  crewkit looks for: ~/.claude, ~/.copilot, ~/.cursor
   Install one of these tools and re-run.
     `);
     process.exit(1);
@@ -52,13 +52,13 @@ export async function install() {
       case 'claude':
         installClaude(target, version);
         break;
+      case 'copilot':
+        installSingleFile(target, 'copilot-agent.md', 'crewkit-setup.md',
+          'GitHub Copilot  ', 'Use @crewkit-setup in Copilot CLI or Chat', version);
+        break;
       case 'cursor':
         installSingleFile(target, 'cursor-global.md', 'crewkit-setup.md',
-          'Cursor', 'Next: open any project in Cursor and type:\n\n    @crewkit-setup', version);
-        break;
-      case 'vscode':
-        installSingleFile(target, 'vscode-global.prompt.md', 'crewkit-setup.prompt.md',
-          'GitHub Copilot (VS Code)', 'Next: open any project in VS Code Copilot Chat and run:\n\n    /crewkit-setup', version);
+          'Cursor          ', 'Copy to .cursor/rules/ in your projects', version);
         break;
     }
   }

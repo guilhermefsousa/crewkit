@@ -1,6 +1,6 @@
 ---
-mode: agent
-description: "Scan this codebase and generate a complete context engineering setup: .github/copilot-instructions.md, .github/instructions/, .github/agents/, .ai/memory/"
+name: crewkit-setup
+description: "Scan your codebase and generate a complete context engineering setup: agents, instructions, memory files, and copilot-instructions.md."
 ---
 
 # crewkit-setup

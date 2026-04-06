@@ -1,18 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir, platform } from 'node:os';
-
-function getVSCodeUserPath() {
-  const home = homedir();
-  switch (platform()) {
-    case 'win32':
-      return join(process.env.APPDATA || join(home, 'AppData', 'Roaming'), 'Code', 'User');
-    case 'darwin':
-      return join(home, 'Library', 'Application Support', 'Code', 'User');
-    default:
-      return join(home, '.config', 'Code', 'User');
-  }
-}
+import { homedir } from 'node:os';
 
 export function detectTools() {
   const tools = [];
@@ -23,15 +11,14 @@ export function detectTools() {
     tools.push({ id: 'claude', name: 'Claude Code', dest, versionFile: join(dest, '.version') });
   }
 
-  if (existsSync(join(home, '.cursor'))) {
-    const dest = join(home, '.cursor', 'rules');
-    tools.push({ id: 'cursor', name: 'Cursor', dest, versionFile: join(dest, 'crewkit-setup.version') });
+  if (existsSync(join(home, '.copilot'))) {
+    const dest = join(home, '.copilot', 'agents');
+    tools.push({ id: 'copilot', name: 'GitHub Copilot', dest, versionFile: join(dest, 'crewkit-setup.version') });
   }
 
-  const vscodePath = getVSCodeUserPath();
-  if (existsSync(vscodePath)) {
-    const dest = join(vscodePath, 'prompts');
-    tools.push({ id: 'vscode', name: 'GitHub Copilot (VS Code)', dest, versionFile: join(dest, 'crewkit-setup.version') });
+  if (existsSync(join(home, '.cursor'))) {
+    const dest = join(home, '.cursor');
+    tools.push({ id: 'cursor', name: 'Cursor', dest, versionFile: join(dest, 'crewkit-setup.version') });
   }
 
   return tools;
