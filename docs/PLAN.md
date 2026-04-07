@@ -160,7 +160,7 @@ crewkit/
 ├── skill/                            # o que vai pra ~/.claude/skills/crewkit-setup/
 │   ├── SKILL.md                      # /crewkit-setup (o coracao — ~1086 linhas)
 │   ├── adapters/                     # adapters Multi-IDE (v0.2)
-│   │   └── copilot.md               # gera arquivos GitHub Copilot
+│   │   └── copilot.md               # gera arquivos GitHub Copilot (agents, skills, prompts, instructions, guardrails)
 │   └── templates/                    # templates que a skill copia pro projeto
 │       ├── agents/
 │       │   ├── explorer.md
@@ -260,15 +260,20 @@ O usuario expande conforme precisar via `settings.local.json`.
 
 | Conceito | Claude Code | GitHub Copilot |
 |----------|-------------|----------------|
-| Regras globais | `CLAUDE.md` | `.github/copilot-instructions.md` |
-| Regras por path | `.claude/rules/*.md` | `.github/instructions/*.instructions.md` |
-| Agents | `.claude/agents/*.md` | `.github/agents/*.agent.md` |
-| Skills/Prompts | `.claude/skills/*/SKILL.md` | `.github/prompts/*.prompt.md` |
-| Hooks | `.claude/settings.json` | Hooks (lifecycle) |
-| Memory | `.ai/memory/` | `.ai/memory/` |
-| Model tiers | frontmatter `model:` | N/A (modelo unico) |
+| Regras globais | `CLAUDE.md` | `.github/copilot-instructions.md` (sem frontmatter) |
+| Regras por path | `.claude/rules/*.md` (`globs:`) | `.github/instructions/*.instructions.md` (`applyTo:`) |
+| Agents | `.claude/agents/*.md` | `.github/agents/*.agent.md` (com `tools:`, `mcp-servers:`) |
+| Skills | `.claude/skills/*/SKILL.md` | `.github/skills/*/SKILL.md` (nativo!) |
+| Prompts (fallback) | N/A | `.github/prompts/*.prompt.md` (lossy, IDE only) |
+| Hooks | `.claude/hooks/*.sh` + `settings.json` | Absorvidos em `copilot-instructions.md` + `instructions/sensitive-files.instructions.md` |
+| Permissoes | `settings.json` (allow/deny) | `tools:` no frontmatter dos agents |
+| MCP servers | `.mcp.json` | `mcp-servers:` no frontmatter dos agents |
+| Memory | `.ai/memory/` | `.ai/memory/` (compartilhado) |
+| Model tiers | frontmatter `model: sonnet` | frontmatter `model: "Claude Sonnet 4"` (convertido) |
+| Napkin | `.claude/napkin.md` | Referenciado em `copilot-instructions.md` |
+| Onboarding | `.claude/QUICKSTART.md` | Absorvido em `copilot-instructions.md` |
 
-**Nota v0.2:** Adapter Copilot ignora frontmatter `model:` dos agents. Se a IDE suportar selecao de modelo no futuro, o adapter pode ser atualizado.
+**Nota:** Copilot coding agent le nativamente `CLAUDE.md`, `AGENTS.md`, e `.ai/memory/`. A camada compartilhada e maior do que parece — o adapter converte formato, nao conteudo.
 
 ---
 

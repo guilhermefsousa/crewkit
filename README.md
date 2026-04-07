@@ -94,7 +94,7 @@ npx crewkit add impact         # analise de blast radius
 ## IDEs suportadas
 
 - **Claude Code** — suporte completo (agents, skills, hooks, rules, memory)
-- **GitHub Copilot** — gera `copilot-instructions.md`, agents e prompts
+- **GitHub Copilot** — gera `copilot-instructions.md`, agents, skills nativas, prompts, instructions por stack e guardrails de seguranca
 
 A IDE e selecionada pelo usuario durante o setup. `.ai/memory/` e compartilhado entre as IDEs.
 
@@ -215,7 +215,7 @@ npx crewkit add impact         # blast radius analysis
 ## Supported IDEs
 
 - **Claude Code** — full support (agents, skills, hooks, rules, memory)
-- **GitHub Copilot** — generates `copilot-instructions.md`, agents and prompts
+- **GitHub Copilot** — generates `copilot-instructions.md`, agents, native skills, prompts, per-stack instructions and security guardrails
 
 IDE is selected by the user during setup. `.ai/memory/` is shared across IDEs.
 

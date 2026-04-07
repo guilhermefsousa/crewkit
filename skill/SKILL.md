@@ -90,6 +90,8 @@ Create directories based on the **selected IDE targets** from Pre-flight:
 .github/
   agents/
   instructions/
+  skills/
+  prompts/
 ```
 
 ### Version tracking
@@ -1069,10 +1071,11 @@ After all generation steps, run the **Completion Checklist** (at the bottom of t
 - `.mcp.json` — [N] MCP servers
 
 ## Generated files (GitHub Copilot) — only if selected
-- `.github/copilot-instructions.md` — project rules
-- `.github/instructions/` — [N] per-stack instruction files
-- `.github/agents/` — 5 agent files
-- `.github/prompts/` — [N] workflow prompts
+- `.github/copilot-instructions.md` — project rules (no frontmatter, includes session start + quality gate + safety rules)
+- `.github/instructions/` — [N] per-stack instruction files + sensitive-files guardrail
+- `.github/agents/` — 5 agent files (with model, tools, mcp-servers)
+- `.github/skills/` — 4 native skills
+- `.github/prompts/` — 4 IDE fallback prompts
 
 ## Validation: [X]/[Y] checks passed
 
@@ -1122,10 +1125,13 @@ Before presenting the Final Report, go through EVERY item. Fix failures before r
 - [ ] `.claude/skills/` — all 4 core skills have SKILL.md (full-workflow, hotfix, explore-and-plan, review-pr)
 
 ### Content checks (Copilot — only if Copilot is a selected target)
-- [ ] `.github/copilot-instructions.md` — exists, contains project hard rules, no Claude-specific sections
+- [ ] `.github/copilot-instructions.md` — exists, **NO frontmatter**, contains hard rules + session start + quality gate + safety rules, no Claude-specific sections
 - [ ] `.github/instructions/` — at least 1 per detected stack with `applyTo:` frontmatter
-- [ ] `.github/agents/` — 5 agent files with `.agent.md` extension, no `model:` lines, uses canonical tool aliases (`read`, `edit`, `search`, `create`, `run`)
-- [ ] `.github/prompts/` — prompt files have `description:` + `mode: "agent"` frontmatter (no `name:` field)
+- [ ] `.github/instructions/sensitive-files.instructions.md` — exists with glob for `.env*`, `credentials*`, `secrets*`, `*.key`, `*.pem`
+- [ ] `.github/agents/` — 5 agent files with `.agent.md` extension, each has `tools:` with canonical aliases (`read`, `edit`, `search`, `execute`), has `model:` converted to Copilot names, body under 30,000 chars
+- [ ] `.github/agents/coder.agent.md` + `tester.agent.md` — have `mcp-servers:` if `.mcp.json` exists
+- [ ] `.github/skills/` — 4 native skill files with `name:` + `description:` frontmatter
+- [ ] `.github/prompts/` — 4 IDE fallback prompts with `description:` + `agent: "agent"` frontmatter
 
 ### Integrity checks (always)
 - [ ] `.crewkit/last-scan.md` — exists with full profile including Domain section
