@@ -1,5 +1,6 @@
 # Relatório de Tarefas — 2026-04-06
 
+
 ## Tarefa: Reescrita completa do adapter GitHub Copilot
 
 **Status:** Concluída
