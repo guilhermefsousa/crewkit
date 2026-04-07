@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { detectTools } from './detect.js';
@@ -20,13 +20,13 @@ function installClaude(target, version) {
   console.log(`    Run /crewkit-setup in any project\n`);
 }
 
-function installSingleFile(target, templateFile, outputFile, label, hint, version) {
-  const template = join(__dirname, '..', 'skill', templateFile);
+function installCopilot(target, version) {
+  const skillSource = join(__dirname, '..', 'skill');
   mkdirSync(target.dest, { recursive: true });
-  copyFileSync(template, join(target.dest, outputFile));
+  cpSync(skillSource, target.dest, { recursive: true, force: true });
   writeFileSync(target.versionFile, version, 'utf8');
-  console.log(`  ✓ ${label}  →  ${join(target.dest, outputFile)}`);
-  console.log(`    ${hint}\n`);
+  console.log(`  ✓ GitHub Copilot    →  ${target.dest}`);
+  console.log(`    Use @crewkit-setup in Copilot CLI or Chat\n`);
 }
 
 export async function install() {
@@ -53,8 +53,7 @@ export async function install() {
         installClaude(target, version);
         break;
       case 'copilot':
-        installSingleFile(target, 'copilot-agent.md', 'crewkit-setup.md',
-          'GitHub Copilot  ', 'Use @crewkit-setup in Copilot CLI or Chat', version);
+        installCopilot(target, version);
         break;
     }
   }
