@@ -94,10 +94,9 @@ npx crewkit add impact         # analise de blast radius
 ## IDEs suportadas
 
 - **Claude Code** — suporte completo (agents, skills, hooks, rules, memory)
-- **GitHub Copilot** — auto-detectado, gera `copilot-instructions.md`, agents e prompts
-- **Cursor** — auto-detectado, gera rules com globs e `AGENTS.md`
+- **GitHub Copilot** — gera `copilot-instructions.md`, agents e prompts
 
-A IDE e detectada automaticamente durante o setup. `.ai/memory/` e compartilhado entre todas as IDEs.
+A IDE e selecionada pelo usuario durante o setup. `.ai/memory/` e compartilhado entre as IDEs.
 
 ## O que e commitado vs ignorado
 
@@ -111,7 +110,7 @@ A IDE e detectada automaticamente durante o setup. `.ai/memory/` e compartilhado
 ## Requisitos
 
 - Node.js >= 20
-- Claude Code, GitHub Copilot ou Cursor
+- Claude Code ou GitHub Copilot
 - Opus ou Sonnet recomendado (Haiku funciona mas gera scans mais rasos)
 
 ## Licenca
@@ -216,10 +215,9 @@ npx crewkit add impact         # blast radius analysis
 ## Supported IDEs
 
 - **Claude Code** — full support (agents, skills, hooks, rules, memory)
-- **GitHub Copilot** — auto-detected, generates `copilot-instructions.md`, agents and prompts
-- **Cursor** — auto-detected, generates rules with globs and `AGENTS.md`
+- **GitHub Copilot** — generates `copilot-instructions.md`, agents and prompts
 
-IDE is auto-detected during setup. `.ai/memory/` is shared across all IDEs.
+IDE is selected by the user during setup. `.ai/memory/` is shared across IDEs.
 
 ## What gets committed vs ignored
 
@@ -233,7 +231,7 @@ IDE is auto-detected during setup. `.ai/memory/` is shared across all IDEs.
 ## Requirements
 
 - Node.js >= 20
-- Claude Code, GitHub Copilot, or Cursor
+- Claude Code or GitHub Copilot
 - Opus or Sonnet recommended (Haiku works but produces shallower scans)
 
 ## License

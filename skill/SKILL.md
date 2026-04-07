@@ -15,7 +15,7 @@ This skill scans the current project's codebase and generates a complete, calibr
 
 ### Critical rules (read before starting)
 1. **Language:** All generated files MUST be in **English**. User-facing output (reports during execution) matches the user's language.
-2. **Zero questions:** Do not pause for user input except for re-run detection ([R]/[M]/[C]).
+2. **Zero questions:** Do not pause for user input except for re-run detection ([R]/[M]/[C]) and IDE target selection.
 3. **Validate everything:** After all files are generated, run the completion checklist at the bottom of this document before reporting done.
 4. **Persist to disk:** Write scan results to `.crewkit/` files at each phase. Read them back before generating. This survives context compaction.
 
@@ -40,6 +40,21 @@ Check if `.crewkit/version` exists.
 
 Wait for user choice. On [R] or [M]: existing `lessons-*.md` files with content are **preserved and merged**, not overwritten — these contain accumulated institutional knowledge.
 
+### 3. IDE target selection
+
+**Always ask the user which IDEs to generate context for.**
+
+Check if a previous selection exists in `.crewkit/scan-phase1-recon.md`. If it does, show it as the default.
+
+> "Which IDEs should I generate context for?"
+> - **[1] Claude Code**
+> - **[2] GitHub Copilot**
+> - **[A] All of the above**
+>
+> You can select multiple (e.g., "1,2"). Default: [previous selection if re-run, or "1" if first run].
+
+Accept the user's choice. If the user presses Enter without typing, use the default.
+
 ---
 
 ## Phase 0 — Preparation
@@ -51,7 +66,7 @@ If `.claude/` or `CLAUDE.md` or `.ai/memory/` exists:
 3. Report: "Existing setup backed up to `.crewkit-backup/`"
 
 ### Create directory structure
-Create directories based on the **selected IDE targets** from Phase 1:
+Create directories based on the **selected IDE targets** from Pre-flight:
 
 **Always:**
 ```
@@ -75,12 +90,6 @@ Create directories based on the **selected IDE targets** from Phase 1:
 .github/
   agents/
   instructions/
-```
-
-**If Cursor is a selected target:**
-```
-.cursor/
-  rules/
 ```
 
 ### Version tracking
@@ -162,35 +171,11 @@ For each stack, detect the build and test commands:
 
 Read `package.json` scripts, CI configs, or Makefiles to find the actual commands used in this project. Prefer project-specific over generic.
 
-### IDE Target Detection
+### IDE targets
 
-Detect which IDEs are available. Check **two sources**: project-level signals AND global install markers.
-
-| IDE | Project signals | Global install marker |
-|-----|----------------|----------------------|
-| Claude Code | `.claude/` directory exists | `~/.claude/skills/crewkit-setup/` exists |
-| GitHub Copilot | `.github/` directory exists OR `.github/copilot-instructions.md` found | `~/.copilot/agents/crewkit-setup.md` exists |
-| Cursor | `.cursor/` directory exists OR `.cursorrules` file found | `~/.cursor/crewkit-setup.md` exists |
-
-An IDE is **available** if ANY of its signals match (project OR global).
-
-**IDE target selection (exception to zero-questions rule):**
-
-If more than one IDE is available, present the user with a choice:
-
-> "Multiple IDEs detected. Generate context for which?"
-> - **[1] Claude Code**
-> - **[2] GitHub Copilot**
-> - **[3] Cursor**
-> - **[4] All detected**
->
-> (Only show IDEs that were detected. Default: all detected.)
-
-If only one IDE is available, use it without asking.
-
-Save the **selected** IDE targets to scan data. Example:
+Use the IDE targets selected during Pre-flight (step 3). Include them in the scan data:
 ```
-IDE targets selected: GitHub Copilot
+IDE targets selected: [selected IDEs from pre-flight]
 ```
 
 **Store results as: `ReconProfile`** — write to `.crewkit/scan-phase1-recon.md` for persistence.
@@ -214,10 +199,8 @@ Read existing human-written documentation to understand project context, convent
 **Existing AI context (from any IDE — preserve, don't discard):**
 - Existing `CLAUDE.md` (if backed up from a previous setup)
 - Existing `.ai/memory/` files (if backed up)
-- `.cursorrules` or `.cursor/rules/*.md` (Cursor)
 - `.github/copilot-instructions.md` or `.github/instructions/*.md` (GitHub Copilot)
 - `.github/agents/*.agent.md` (Copilot agents)
-- `AGENTS.md` (Cursor agents)
 
 If any of these exist, read them and extract rules, conventions, and patterns to incorporate into the generated setup. This preserves context engineering work done in other IDEs.
 
@@ -446,7 +429,7 @@ Compile all profiles into a single summary and present it to the user.
 - Dev server: `[command]` (if detected)
 
 ## IDE Targets (selected)
-- [list selected IDE targets — e.g., "GitHub Copilot" or "Claude Code, Cursor"]
+- [list selected IDE targets — e.g., "Claude Code" or "Claude Code, GitHub Copilot"]
 ```
 
 ### Save profile
@@ -480,9 +463,9 @@ Generate files based on the **selected IDE targets** from Phase 1. The generatio
 - **Steps 2-9** (CLAUDE.md, `.claude/agents/`, `.claude/rules/`, `.claude/settings.json`, `.claude/hooks/`, `.claude/skills/`, `.claude/QUICKSTART.md`, `.mcp.json`): ONLY if **Claude Code** is a selected target.
 - **Step 10** (IDE Adapters): Runs for each non-Claude IDE in the selected targets. Adapters generate directly from scan data + `.ai/memory/` — they do NOT depend on Claude files existing.
 
-If the only selected target is GitHub Copilot or Cursor, Steps 2-9 are **skipped entirely**. The adapter generates the IDE-native files directly.
+If the only selected target is GitHub Copilot, Steps 2-9 are **skipped entirely**. The adapter generates the IDE-native files directly.
 
-**If the user chose [M] (memory only):** generate Step 1 (memory) + the project rules file for the selected IDE (CLAUDE.md / copilot-instructions.md / .cursor/rules/project.md), then update context headers in existing agents. Stop after that.
+**If the user chose [M] (memory only):** generate Step 1 (memory) + the project rules file for the selected IDE (CLAUDE.md / copilot-instructions.md), then update context headers in existing agents. Stop after that.
 
 ### Templates directory
 Templates are located at `~/.claude/skills/crewkit-setup/templates/`. Read them from disk.
@@ -953,7 +936,6 @@ Read all core skill templates from `~/.claude/skills/crewkit-setup/templates/ski
 - `hotfix/SKILL.md`
 - `explore-and-plan/SKILL.md`
 - `review-pr/SKILL.md`
-
 Copy each skill template to `.claude/skills/[name]/SKILL.md`. **If the template has a `references/` subdirectory, copy it too.**
 
 These skill templates are **stack-agnostic** by design — they reference `.ai/memory/commands.md` for build/test commands and `.ai/memory/` for project context. No variable substitution needed.
@@ -979,6 +961,7 @@ This project uses crewkit for AI-assisted development. Here's how to use it.
 - `/hotfix <problem>` — compressed flow for urgent production fixes (max 2 iterations)
 - `/explore-and-plan <feature>` — map a module and plan before coding (recommended for LARGE tasks)
 - `/review-pr [number]` — review a pull request
+
 
 ## How agents work together
 The orchestrator routes work to specialized agents:
@@ -1046,14 +1029,11 @@ For any placeholder tokens, add a comment in the profile or tell the user to fil
 
 ### Step 10 — IDE Adapters
 
-For each **non-Claude IDE** in the selected targets (GitHub Copilot, Cursor):
+If **GitHub Copilot** is a selected target:
 
-1. For each selected non-Claude IDE target:
-   a. Determine the adapter file path: `~/.claude/skills/crewkit-setup/adapters/{ide}.md`
-      - GitHub Copilot → `adapters/copilot.md`
-      - Cursor → `adapters/cursor.md`
-   b. If the adapter file does not exist: WARN the user ("Adapter file not found for [IDE] — skipping") and continue to the next IDE. Do not fail.
-   c. If the adapter file exists: read it completely, then MANDATORY: follow ALL instructions in it.
+1. Determine the adapter file path: `~/.claude/skills/crewkit-setup/adapters/copilot.md`
+2. If the adapter file does not exist: WARN the user ("Adapter file not found for Copilot — skipping"). Do not fail.
+3. If the adapter file exists: read it completely, then MANDATORY: follow ALL instructions in it.
 
 **Source of truth for adapters (in priority order):**
 1. If Claude Code files exist (Steps 2-9 were generated): use them as the primary source, converting content to the target IDE format.
@@ -1092,11 +1072,7 @@ After all generation steps, run the **Completion Checklist** (at the bottom of t
 - `.github/copilot-instructions.md` — project rules
 - `.github/instructions/` — [N] per-stack instruction files
 - `.github/agents/` — 5 agent files
-
-## Generated files (Cursor) — only if selected
-- `.cursor/rules/project.md` — project rules
-- `.cursor/rules/` — [N] per-stack rule files
-- `AGENTS.md` — all agents
+- `.github/prompts/` — [N] workflow prompts
 
 ## Validation: [X]/[Y] checks passed
 
@@ -1108,7 +1084,6 @@ After all generation steps, run the **Completion Checklist** (at the bottom of t
 [Adapt next steps to the selected IDE:]
 - Claude Code: "Review CLAUDE.md → run /full-workflow"
 - Copilot: "Review .github/copilot-instructions.md → open Copilot Chat"
-- Cursor: "Review .cursor/rules/project.md → start coding"
 - All: "Commit the setup"
 ```
 
@@ -1144,17 +1119,13 @@ Before presenting the Final Report, go through EVERY item. Fix failures before r
 - [ ] `.mcp.json` — read back, verify valid JSON, has context7
 - [ ] `.claude/hooks/*.sh` — run `bash -n` on each, all 4 pass syntax check
 - [ ] `.claude/rules/` — at least 1 per detected stack, glob patterns match real files in project
-- [ ] `.claude/skills/` — all 4 core skills have SKILL.md
+- [ ] `.claude/skills/` — all 4 core skills have SKILL.md (full-workflow, hotfix, explore-and-plan, review-pr)
 
 ### Content checks (Copilot — only if Copilot is a selected target)
 - [ ] `.github/copilot-instructions.md` — exists, contains project hard rules, no Claude-specific sections
 - [ ] `.github/instructions/` — at least 1 per detected stack with `applyTo:` frontmatter
-- [ ] `.github/agents/` — 5 agent files with `.agent.md` extension, no `model:` lines
-
-### Content checks (Cursor — only if Cursor is a selected target)
-- [ ] `.cursor/rules/project.md` — exists, has `alwaysApply: true` frontmatter, no Claude-specific sections
-- [ ] `.cursor/rules/` — at least 1 per detected stack with `globs:` frontmatter
-- [ ] `AGENTS.md` — exists at project root with all 5 agents as `##` sections
+- [ ] `.github/agents/` — 5 agent files with `.agent.md` extension, no `model:` lines, uses canonical tool aliases (`read`, `edit`, `search`, `create`, `run`)
+- [ ] `.github/prompts/` — prompt files have `description:` + `mode: "agent"` frontmatter (no `name:` field)
 
 ### Integrity checks (always)
 - [ ] `.crewkit/last-scan.md` — exists with full profile including Domain section

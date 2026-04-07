@@ -7,7 +7,7 @@
 
 O setup de context engineering do Relivox (agents, skills, hooks, rules, memory) foi construido manualmente ao longo de semanas. Queremos empacotar isso como um produto instalavel que qualquer dev roda em qualquer projeto e sai com o setup completo — calibrado pro codigo real, nao generico.
 
-**Publico-alvo:** Times de desenvolvimento (2+ devs) que usam AI assistants (Claude Code, Copilot, Cursor) em projetos com codigo existente. O crewkit padroniza o context engineering pra que todo dev do time trabalhe com o mesmo setup de AI.
+**Publico-alvo:** Times de desenvolvimento (2+ devs) que usam AI assistants (Claude Code, Copilot) em projetos com codigo existente. O crewkit padroniza o context engineering pra que todo dev do time trabalhe com o mesmo setup de AI.
 
 ## Principio arquitetural
 
@@ -20,7 +20,7 @@ O setup de context engineering do Relivox (agents, skills, hooks, rules, memory)
 1. **Distribuicao via npm** — `npx crewkit install` (uma vez, copia skill pra global)
 2. **Um comando por projeto** — `/crewkit-setup` faz tudo (scaffolding + scan + calibracao)
 3. **Zero perguntas** (projeto existente) — AI detecta tudo do codigo + git
-4. **Multi-IDE** — Claude Code (v0.1), GitHub Copilot + Cursor (v0.2)
+4. **Multi-IDE** — Claude Code (v0.1), GitHub Copilot (v0.2)
 5. **`.ai/memory/` universal** — funciona em qualquer IDE
 6. **Skills como plugins** — core instalado automaticamente, opcionais sob demanda
 7. **Sem config.yaml** — commands em `.ai/memory/commands.md`, model tiers no frontmatter dos agents
@@ -30,7 +30,7 @@ O setup de context engineering do Relivox (agents, skills, hooks, rules, memory)
 11. **Version tracking** — `.crewkit/version` com versao do crewkit que gerou os arquivos
 12. **Gerenciar .gitignore** — skill adiciona entradas pra arquivos que nao devem ser commitados
 13. **Permissoes conservadoras** — settings.json so permite read, edit, git e build/test detectados
-14. **Model tiers sao Claude Code only** — adapters Copilot/Cursor ignoram frontmatter `model:` (v0.2)
+14. **Model tiers sao Claude Code only** — adapter Copilot ignora frontmatter `model:` (v0.2)
 15. **Licenca MIT** — open source, sem restricoes de uso
 
 ---
@@ -160,8 +160,7 @@ crewkit/
 ├── skill/                            # o que vai pra ~/.claude/skills/crewkit-setup/
 │   ├── SKILL.md                      # /crewkit-setup (o coracao — ~1086 linhas)
 │   ├── adapters/                     # adapters Multi-IDE (v0.2)
-│   │   ├── copilot.md               # gera arquivos GitHub Copilot
-│   │   └── cursor.md                # gera arquivos Cursor
+│   │   └── copilot.md               # gera arquivos GitHub Copilot
 │   └── templates/                    # templates que a skill copia pro projeto
 │       ├── agents/
 │       │   ├── explorer.md
@@ -259,17 +258,17 @@ O usuario expande conforme precisar via `settings.local.json`.
 
 ## Mapa de equivalencias IDE
 
-| Conceito | Claude Code | GitHub Copilot | Cursor |
-|----------|-------------|----------------|--------|
-| Regras globais | `CLAUDE.md` | `.github/copilot-instructions.md` | `.cursor/rules/*.md` (alwaysApply) |
-| Regras por path | `.claude/rules/*.md` | `.github/instructions/*.instructions.md` | `.cursor/rules/*.md` (globs) |
-| Agents | `.claude/agents/*.md` | `.github/agents/*.agent.md` | `AGENTS.md` |
-| Skills/Prompts | `.claude/skills/*/SKILL.md` | `.github/prompts/*.prompt.md` | N/A |
-| Hooks | `.claude/settings.json` | Hooks (lifecycle) | N/A |
-| Memory | `.ai/memory/` | `.ai/memory/` | `.ai/memory/` |
-| Model tiers | frontmatter `model:` | N/A (modelo unico) | N/A |
+| Conceito | Claude Code | GitHub Copilot |
+|----------|-------------|----------------|
+| Regras globais | `CLAUDE.md` | `.github/copilot-instructions.md` |
+| Regras por path | `.claude/rules/*.md` | `.github/instructions/*.instructions.md` |
+| Agents | `.claude/agents/*.md` | `.github/agents/*.agent.md` |
+| Skills/Prompts | `.claude/skills/*/SKILL.md` | `.github/prompts/*.prompt.md` |
+| Hooks | `.claude/settings.json` | Hooks (lifecycle) |
+| Memory | `.ai/memory/` | `.ai/memory/` |
+| Model tiers | frontmatter `model:` | N/A (modelo unico) |
 
-**Nota v0.2:** Adapters Copilot/Cursor ignoram frontmatter `model:` dos agents. Se a IDE suportar selecao de modelo no futuro, o adapter pode ser atualizado.
+**Nota v0.2:** Adapter Copilot ignora frontmatter `model:` dos agents. Se a IDE suportar selecao de modelo no futuro, o adapter pode ser atualizado.
 
 ---
 
@@ -482,13 +481,12 @@ Limitacoes conhecidas v0.1:
 
 ### v0.2 — Multi-IDE + extras
 
-**Objetivo:** Suporte a Copilot e Cursor. Mais skills. Update command.
+**Objetivo:** Suporte a Copilot. Mais skills. Update command.
 
 **Tarefas:**
 
 Adapters:
 - [x] Adapter GitHub Copilot — `skill/adapters/copilot.md` (239 linhas, gera copilot-instructions.md, agents, prompts, instructions)
-- [x] Adapter Cursor — `skill/adapters/cursor.md` (215 linhas, gera rules com globs, AGENTS.md)
 - [x] Skill detecta IDE (Phase 1) e roteia geracao (Phase 7 Step 10)
 - [x] Adapters ignoram frontmatter `model:` (Claude Code only)
 - [x] Decisao arquitetural: Option B (adapters em arquivos separados, nao inline no SKILL.md)
@@ -517,7 +515,6 @@ Validacao:
 - [x] CLI testada (install, update, add — todos os cenarios)
 - [x] Regression test Relivox (worktree isolado — 12/17 checks, 5 bloqueados por hook do Relivox, nao do crewkit)
 - [ ] Testar geracao Copilot num projeto real com VS Code + Copilot
-- [ ] Testar geracao Cursor num projeto real com Cursor IDE
 - [ ] Testar em repo open source Node.js (Express/Next.js)
 - [ ] Testar em repo open source Go
 - [ ] Publicar v0.2.0 no npm
