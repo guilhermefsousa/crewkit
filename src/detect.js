@@ -16,10 +16,5 @@ export function detectTools() {
     tools.push({ id: 'copilot', name: 'GitHub Copilot', dest, versionFile: join(dest, 'crewkit-setup.version') });
   }
 
-  if (existsSync(join(home, '.cursor'))) {
-    const dest = join(home, '.cursor');
-    tools.push({ id: 'cursor', name: 'Cursor', dest, versionFile: join(dest, 'crewkit-setup.version') });
-  }
-
   return tools;
 }

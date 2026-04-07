@@ -37,7 +37,7 @@ export async function install() {
     console.log(`
   No supported AI tools detected.
 
-  crewkit looks for: ~/.claude, ~/.copilot, ~/.cursor
+  crewkit looks for: ~/.claude, ~/.copilot
   Install one of these tools and re-run.
     `);
     process.exit(1);
@@ -55,10 +55,6 @@ export async function install() {
       case 'copilot':
         installSingleFile(target, 'copilot-agent.md', 'crewkit-setup.md',
           'GitHub Copilot  ', 'Use @crewkit-setup in Copilot CLI or Chat', version);
-        break;
-      case 'cursor':
-        installSingleFile(target, 'cursor-global.md', 'crewkit-setup.md',
-          'Cursor          ', 'Copy to .cursor/rules/ in your projects', version);
         break;
     }
   }
