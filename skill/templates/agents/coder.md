@@ -32,7 +32,8 @@ These files prevent you from repeating mistakes the team already learned the har
 - NEVER rename variables, extract methods, or "improve" code that is not part of the task
 - Follow the existing pattern in the module — match what is there, not what you think is better
 - If you need to change a DTO, event payload, or API contract, **state it explicitly** in your return and flag which consumers are affected
-- **When changing an exception type** thrown by a client/service: grep for ALL test doubles/fakes that throw the old type and update them
+- **When changing an exception type** thrown by a client/service: grep for ALL test doubles/fakes that throw the old type and update them. Failing to do this causes silent test regressions.
+- NEVER use in-memory DB fakes for tests — use real DB containers or test-specific real databases.
 
 ## Stack-Specific Rules
 

@@ -10,11 +10,16 @@ If $ARGUMENTS is a path or module name, scope the scan to that area.
 
 ---
 
-## When to use
+## When to invoke
 
-Use before merging changes that touch auth, tenant isolation, input handling, external integrations,
-or any area that directly processes user-supplied data. Not a replacement for automated SAST —
-a targeted, context-aware review using project conventions.
+Run security-scan:
+- **Before releases** — gate before merging the release branch
+- **After major refactors** — when a change touches auth, tenant isolation, JWT handling, raw SQL, file-path handling, or HTML/template rendering
+- **Monthly cadence** — dependency CVEs and configuration drift accumulate even without code changes
+- **After any security incident** — re-scan to confirm fix scope and detect related issues
+- **On-demand** — audit prep, user request, or when a lessons file adds a SEC-* or BUG-* entry
+
+Do NOT skip on "small change" PRs that touch any of the trigger surfaces above.
 
 ---
 
@@ -29,6 +34,18 @@ Extract:
 - Auth mechanism (JWT, sessions, API keys)
 - Data flow: where external input enters the system
 - Stack-specific concerns (e.g., SQL via ORM, HTML rendering, file uploads)
+
+### 1.5 — Load project-known issues from lessons
+
+Scan all `.ai/memory/lessons-*.md` files for entries tagged `SEC-*` or `BUG-*`. These are known security findings discovered during prior incidents. Verify each is fixed (or still present) and report status.
+
+Tagging convention: `### SEC-1 [YYYY-MM-DD] <title>` or `### BUG-1 [YYYY-MM-DD] <title>` in lessons files.
+
+For each item found, record: ID, source file, description, current status (OPEN / FIXED / PARTIAL).
+
+Do not rely on a static list embedded in this skill — the lessons files are the authoritative source and are updated as issues are found or fixed.
+
+If no SEC-* or BUG-* items are found, note "No known tracked issues — proceeding to OWASP check."
 
 ### 2. Map attack surface
 
@@ -116,6 +133,13 @@ Report any findings with file path and line number. Flag `FAIL` in A02 if found.
 **Security Scan Report**
 **Scope:** [full codebase or specific module]
 **Stack:** [detected from architecture.md]
+
+## Known Issues Status (from lessons files)
+[table from Step 1.5, or "No tracked SEC-*/BUG-* items found"]
+
+| ID | Source file | Status | Details |
+|----|-------------|--------|---------|
+| SEC-1 | lessons-domain.md | OPEN / FIXED / PARTIAL | [details] |
 
 ## OWASP Top 10 Status
 [table from Step 3]

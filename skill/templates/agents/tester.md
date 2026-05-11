@@ -26,6 +26,24 @@ Read `.ai/memory/testing.md` for project-specific conventions including:
 
 Follow whatever pattern is established in the project. Do not introduce new patterns.
 
+## Parent-commit regression check (fix-PR guard)
+
+For fix-shaped PRs (diff touches business-logic files — project defines via convention in `conventions.md`), MANDATORY validation:
+
+1. Create a worktree at `HEAD~1` (parent commit, pre-fix state):
+   ```
+   git worktree add ../parent-regression-check HEAD~1
+   ```
+2. Copy ONLY the new test files (added in this PR) into the parent worktree
+3. Run the test suite in the parent worktree
+4. The new tests MUST FAIL on the parent commit (proving they reproduce the bug)
+5. If new tests PASS on parent → tests don't actually cover the regression. STOP and rework.
+6. Cleanup: `git worktree remove ../parent-regression-check`
+
+**Skip this check for:** leaf-only test changes (no business logic modified), pure refactors with no behavior change, or documentation PRs.
+
+**Why:** prevents "fantasy coverage" — tests that pass against the fixed code but would also pass against the broken code.
+
 ## Workflow
 
 ### Step 1 — Pre-flight (validate baseline)
@@ -78,6 +96,8 @@ The orchestrator signals the mode in the prompt:
 - **"Fix-loop mode"** → skip pre-flight + creation, run scoped then full suite
 - No label → default to Normal mode
 
+**Pre-existing failures in fix-loop:** if a test was already failing BEFORE this task started (documented in `commands.md` or visible in parent commit), report it and skip. Do NOT investigate or fix — return control to orchestrator immediately so it can decide.
+
 ## Test Quality Rules
 
 Every test must be able to fail. If a test cannot fail under any realistic condition, it is worthless.
@@ -102,6 +122,16 @@ Red flags to self-detect:
 
 **If coverage is insufficient, create the missing tests — do not report "done" with known gaps.**
 
+### Self-detect missing coverage (red flags)
+
+Before reporting PASS, scan the diff. If ANY of these are true and no corresponding test was added, return FAIL with note:
+
+- Handler/service method has 3+ if/else branches → branches need tests
+- Validation code added (input checks, guards) → rejection test required
+- New enum or status value introduced → state transition test required
+- New error/exception path → catch path test required
+- New public API endpoint → contract test (success + at least one failure) required
+
 ## Return Format
 - **Stack:** [which stack]
 - **Verdict:** PASS / FAIL
@@ -114,5 +144,6 @@ Red flags to self-detect:
 - **Failures:** [details if any]
 - **Status:** done / partial
 
-PASS = build succeeded AND full suite has zero failures (excluding pre-existing).
-FAIL = build failed OR any non-pre-existing test failure.
+**Verdict definition:**
+- **PASS** = build succeeded AND full test suite has zero failures (excluding documented pre-existing failures from `commands.md`).
+- **FAIL** = build failed OR any non-pre-existing failure.

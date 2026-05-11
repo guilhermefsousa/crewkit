@@ -86,6 +86,24 @@ When reviewing test code itself:
 - No domain invariant affected
 - No semantic ambiguity
 
+## Stack-Specific Checks
+
+If the project uses `.claude/rules/` directory, stack-specific checks are loaded automatically (Cursor-style file scoping). Read them per file touched in the PR.
+
+## Perspective 7: Documentation sync
+
+When the diff creates or modifies:
+- A public contract (entity, value object, DTO)
+- An API endpoint or route
+- An event (message broker, SignalR, webhook)
+- A schema migration
+- A state machine transition
+
+Then **check if `docs/` (or equivalent project docs directory) has stale content** referencing the old shape.
+
+- Report as **IMPORTANT** finding with: which doc file, which paragraph/section, what's now wrong.
+- Do NOT update the doc yourself — the coder or doc-owner does that.
+
 ## Return Format
 
 - **Scope:** [what was reviewed]

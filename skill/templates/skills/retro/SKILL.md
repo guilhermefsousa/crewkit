@@ -78,10 +78,20 @@ For each fix loop trigger, propose one concrete process change:
 
 | Finding | Proposed change | Target phase |
 |---------|----------------|--------------|
-| e.g. coder missed multi-tenant rule | Add explicit tenant check to coder prompt | Step 0 (classify) |
+| e.g. coder missed convention rule | Add explicit check to coder prompt | Step 0 (classify) |
 | e.g. test missed edge case | Add edge case checklist to tester for this module | tester |
 
 Keep proposals concrete and actionable. Do not propose vague "be more careful" items.
+
+For each lesson learned, output a **SPECIFIC follow-up** in one of these forms:
+
+- **New CLAUDE.md rule** — include the exact text and the section it belongs in
+- **New hook** — purpose of the hook and when it should fire
+- **Napkin update** — rotate an existing item to top priority OR add a new item (text ready to paste)
+- **Memory update** — which `lessons-{domain}.md` file receives the entry, plus the entry text formatted and ready to paste
+- **Process change** — which skill prompt gets the tweak and what the tweak says
+
+Without specific, ready-to-apply actions, lessons evaporate. Every finding from Steps 3 and 4 must produce at least one item in this list.
 
 ### 6. Extract durable lessons
 
@@ -93,7 +103,7 @@ For each lesson that would prevent future recurrence, format as:
 - **What happened:** [1-2 sentences]
 - **Root cause:** [category from Step 3]
 - **Lesson:** [actionable guidance for next time]
-- **Applies to:** [domain: .NET / gateway / Blazor / process / all]
+- **Applies to:** [domain: backend / frontend / infra / process / all — or specific stack]
 ```
 
 Append to the correct `.ai/memory/lessons-{domain}.md`.
@@ -124,6 +134,13 @@ If a plan file was identified, update its status to **DONE** (if not already).
 
 **Process improvements:**
 [table from Step 5]
+
+**Actionable follow-ups:**
+- [ ] CLAUDE.md rule: [text + section] — or "none"
+- [ ] Hook: [purpose + when] — or "none"
+- [ ] Napkin: [item to rotate/add] — or "none"
+- [ ] Memory: [file + entry text] — or "none"
+- [ ] Skill prompt change: [which skill + what changes] — or "none"
 
 **Lessons documented:** [N lessons → file(s)]
 

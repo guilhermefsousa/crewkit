@@ -84,7 +84,33 @@ Cross-reference hotspot files with risk classification:
 - If fix commit ratio > 30% → flag as **process health concern**
 - If the same file appears in both hotspots and fix loops → flag as **instability candidate**
 
-### 4. Suggest improvements
+### 4. Agent and skill inventory scan
+
+List all available tooling configured for the project:
+
+```bash
+# Agents available
+ls .claude/agents/ 2>/dev/null || echo "none"
+
+# Skills available
+ls .claude/skills/ 2>/dev/null || echo "none"
+
+# MCP servers configured
+cat .mcp.json 2>/dev/null || echo "no .mcp.json"
+cat .claude/settings.json 2>/dev/null | grep -i mcp || echo "none in settings"
+```
+
+Present as inventory table:
+
+| Type | Name | Status |
+|------|------|--------|
+| Agent | [name] | active / unused |
+| Skill | [name] | active / unused |
+| MCP | [name] | configured / unused |
+
+Flag agents or skills that appear in tooling config but whose names never appear in commit messages or git blame — these may be underutilized.
+
+### 5. Suggest improvements
 
 For each systemic risk or process health concern, propose one concrete action:
 - Do not propose vague items ("write more tests")
@@ -114,6 +140,10 @@ For each systemic risk or process health concern, propose one concrete action:
 
 ## Agent Usage
 [table or "Not detectable from commit messages"]
+
+## Tooling Inventory
+[table from Step 4 — agents, skills, MCPs with active/unused status]
+[Flag any underutilized tooling]
 
 ## Systemic Risks
 [list or "None identified"]

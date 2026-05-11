@@ -5,32 +5,45 @@ description: "Analyze blast radius of changing a file, handler, entity, or modul
 
 Analyze blast radius of: $ARGUMENTS
 
-$ARGUMENTS must be a file path, handler name, entity name, module name, or endpoint.
-Examples: `src/Orders/OrderHandler.cs`, `OrderEntity`, `POST /api/orders`, `Orders module`
+## Arguments
+
+`/impact <target>` where `<target>` is one of:
+- File path: `src/Services/UserService.cs`
+- Handler name: `SendMessageHandler`
+- Entity name: `Conversation`
+- Module: `src/Application/Users`
+- Endpoint: `POST /api/orders`
+
+If `<target>` is ambiguous, ask before searching.
 
 ---
 
 ## When to use
 
-Use before starting any MEDIUM or LARGE task to understand the full scope of change.
-Use before `/explore-and-plan` when the target is already known but blast radius is uncertain.
-Use after a production incident to understand what else might be affected by the fix.
+Use before:
+- Renaming any public API
+- Removing a method or field
+- Changing a state machine
+- Refactoring a module boundary
+- Starting any MEDIUM or LARGE task where blast radius is uncertain
+- Investigating a production incident to understand what else might be affected
 
 ---
 
 ## Steps
 
-### 1. Identify the target
+### Step 1 — Load context
+
+Read `.ai/memory/architecture.md` (module boundaries, layer rules) and `.ai/memory/conventions.md` (entity/handler patterns) before searching. These tell you WHERE to look and WHAT to look for.
 
 From $ARGUMENTS, determine:
 - **Target type:** file / class / handler / entity / endpoint / module
 - **Target location:** resolve to exact file path(s) if not already a path
-- **Stack:** infer from path extension and `.ai/memory/architecture.md`
+- **Stack:** infer from path extension and architecture.md
 
-Read `.ai/memory/architecture.md` and `.ai/memory/conventions.md` to understand layer rules
-and naming conventions before searching.
+If $ARGUMENTS does not resolve to a known file or name, ask for clarification before proceeding. Do not guess at the target.
 
-### 2. Map direct callers
+### Step 2 — Map direct callers
 
 Search for all direct references to the target:
 
@@ -39,7 +52,7 @@ Search for all direct references to the target:
 # Adapt search patterns to the detected stack:
 # - .NET: class name, interface name, constructor injection, handler registration
 # - Node.js: require/import of the file, function call sites
-# - Blazor: component references, @inject, @page routes, event handlers
+# - Frontend: component references, page routes, event handlers
 # - SQL/migrations: table name, column name in queries and seeders
 ```
 
@@ -49,14 +62,16 @@ Build the direct caller list:
 |------|---------------|-------|
 | ... | import / call / inject / inherit | controller / service / handler / UI / test |
 
-### 3. Map transitive impact
+### Step 3 — Transitive impact (2 levels)
 
 For each direct caller, check if it is itself called by other files:
 - Go one level deeper if the direct caller is an interface, base class, or shared service
 - Stop at two levels unless the target is a core shared abstraction (entity, base class, shared interface)
 - Flag if the dependency graph is too wide to enumerate (>20 unique callers at any level)
 
-### 4. Map tests
+If a public method is called by 20+ callers, flag as **HIGH-RISK change** and report widest callers first.
+
+### Step 4 — Map tests
 
 Find all test files that directly or indirectly test the target:
 
@@ -69,22 +84,24 @@ Find all test files that directly or indirectly test the target:
 |-----------|-----------|--------------------------|
 | ... | ... | yes / no |
 
-Flag any test file that uses a mock/fake of the target — changing the target's interface or
-exception types will require updating those fakes.
+Flag any test file that uses a mock/fake of the target — changing the target's interface or exception types will require updating those fakes.
 
-### 5. Map API endpoints and UI pages
+### Step 5 — Public API vs internal
 
-If the target is a handler, service, or entity:
-- Find which API endpoints call it (controller/route → handler)
-- Find which UI pages or components consume those endpoints (if frontend source is available)
+For each caller identified in Steps 2 and 3, classify:
 
-| Endpoint | Method | UI page/component | Consumer type |
-|----------|--------|------------------|---------------|
-| ... | ... | ... | internal / public API |
+- **Public**: exposed via API endpoint, event, library export, or doc reference → impact is project-wide, may affect external consumers
+- **Internal**: only used within the module → impact is local
+
+Mark each caller explicitly.
+
+| Endpoint | Method | Consumer type |
+|----------|--------|---------------|
+| ... | ... | internal / public API |
 
 Mark endpoints as **public API** if they are exposed externally — changes to those have higher blast radius.
 
-### 6. Classify blast radius
+### Step 6 — Classify blast radius
 
 | Dimension | Count | Assessment |
 |-----------|-------|-----------|
@@ -102,20 +119,18 @@ Mark endpoints as **public API** if they are exposed externally — changes to t
 - **MEDIUM** — 3-7 files, cross-layer, no public API change
 - **HIGH** — 8+ files, or public API, or auth/tenant, or DB schema change
 
-### 7. Identify change categories
+### Step 7 — Change-shape analysis
 
-Classify what types of changes to the target would cause breakage vs. safe changes:
-
-| Change type | Breakage risk | Affected consumers |
-|-------------|--------------|-------------------|
-| Add new field (non-breaking) | LOW | none |
-| Rename field or method | HIGH | all callers + test fakes |
-| Change return type | HIGH | all callers |
-| Change exception thrown | MEDIUM | test fakes + callers that catch |
-| Add required parameter | HIGH | all call sites |
-| Add optional parameter | LOW | none |
-| Split into two classes | HIGH | all callers + DI registrations |
-| Change DB column | HIGH | queries + migrations |
+| Change shape | Safety | Notes |
+|--------------|--------|-------|
+| Add new optional field/param | SAFE | Backwards-compatible |
+| Add new method/endpoint | SAFE | No existing caller breaks |
+| Rename (method/field/file) | BREAKING | All callers must update |
+| Change return type | BREAKING | Even narrowing breaks consumers |
+| Remove method/field | BREAKING | Hard remove without deprecation |
+| Change behavior (same signature) | SUBTLE-BREAKING | No compile error but runtime semantics change |
+| Change exception thrown | MEDIUM | Test fakes + callers that catch |
+| Change DB column | BREAKING | Queries + migrations |
 
 ---
 
@@ -131,7 +146,7 @@ Classify what types of changes to the target would cause breakage vs. safe chang
 [table from Step 2]
 
 ## Transitive Impact
-[table or "None — direct callers are leaf nodes"]
+[table from Step 3, or "None — direct callers are leaf nodes"]
 
 ## Tests Affected
 [table from Step 4]
@@ -148,10 +163,12 @@ Classify what types of changes to the target would cause breakage vs. safe chang
 ## Safe vs. Breaking Changes
 [table from Step 7]
 
+## If you change this, also change
+- [ ] [file — reason]
+- [ ] [file — reason]
+- [ ] [test file — update assertions or fakes]
+
 ## Recommendation
 [1-3 sentences: what to do before making this change, and what to watch for]
 ---
 ```
-
-If $ARGUMENTS does not resolve to a known file or name, ask for clarification before proceeding.
-Do not guess at the target.

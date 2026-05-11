@@ -58,6 +58,8 @@ Create directories based on the **selected IDE targets** from Phase 1:
 .ai/
   memory/
   plans/
+  audits/    # for validate-plan.js audit outputs
+  prompts/   # reusable task prompts
 .crewkit/
 ```
 
@@ -187,6 +189,24 @@ If more than one IDE is available, present the user with a choice:
 > (Only show IDEs that were detected. Default: all detected.)
 
 If only one IDE is available, use it without asking.
+
+### PR-first workflow detection
+
+Detect whether the project uses PR-first workflow (vs commit-as-you-go):
+
+| Signal | Source |
+|--------|--------|
+| Has `.github/` directory | filesystem |
+| Has `CODEOWNERS` file (`.github/CODEOWNERS` or root) | filesystem |
+| 2+ contributors in last 90 days | `git shortlog -sn --since="90 days ago"` |
+
+If ANY signal matches → set `pr_first_workflow = true` in ReconProfile. Otherwise false.
+
+This flag controls:
+- Whether `full-workflow` skill includes branch creation (Step 0.1) and `/create-pr` finalization
+- Whether `protect-pr-and-main.sh` hook is generated (only if `gh` CLI also detected via `which gh`)
+- Whether `create-pr` skill is generated
+- Whether default branch is detected and passed as `{{default_branch}}` (via `git symbolic-ref refs/remotes/origin/HEAD`)
 
 Save the **selected** IDE targets to scan data. Example:
 ```
@@ -630,6 +650,12 @@ Create empty `lessons-{stack}.md` files for each detected stack.
 [Initial setup — update as project evolves]
 ```
 
+#### `calibration-log.md`
+Empty stub. Used to log agent calibration adjustments over time.
+
+#### `lessons-process.md`
+Empty stub for process/workflow lessons (vs technical stack lessons).
+
 ---
 
 ### Step 2 — `CLAUDE.md` (AI-generated from scan)
@@ -685,6 +711,8 @@ Details for each rule -> `.ai/memory/conventions.md`
 
 `/full-workflow` (implement feature) | `/explore-and-plan` (map + plan) | `/hotfix` (production broken) | `/review-pr` (PR review)
 
+This is the minimal base. Extend with project-specific skills as needs emerge.
+
 ## Architect Decision Gate — MANDATORY
 
 1. Architect **raises options** with pros/cons — does NOT decide
@@ -699,6 +727,7 @@ Details for each rule -> `.ai/memory/conventions.md`
 1. Implement -> 2. Create/update tests -> 3. Run -> 4. Fix if FAIL -> 5. Review -> 6. Report success
 
 > **ABSOLUTE BLOCK:** Never report success with failing tests. After 2 correction cycles, STOP and escalate.
+> Changes to UI component markup always break existing tests — update them together.
 
 ---
 
@@ -715,8 +744,56 @@ Versioned context in git. Load **on demand by stack/task**, not everything:
 | `lessons.md` | Index -> points to domain files |
 | `lessons-{domain}.md` | When working on that specific domain |
 | `state.md` | When needing context about phases/backlog |
+| `calibration-log.md` | When reviewing agent calibration history |
+| `lessons-process.md` | When reviewing or improving workflow/process |
 
 **Memory update rule:** At end of task, if durable lesson -> append to `lessons-{domain}.md`. If state changed -> update `state.md`.
+
+---
+
+## PR-first workflow
+
+[Conditional: include only if pr_first_workflow detected in Phase 1]
+
+All work goes to `[DEFAULT_BRANCH]` via PR — never direct commits.
+
+- Orchestrator creates `feat/<slug>-<YYYYMMDD-HHMMSS>-<rand4>` BEFORE invoking coder
+- Coder and tester run SEQUENTIALLY on the same working tree
+- Reviewer (read-only) can run IN PARALLEL with tester
+- Orchestrator commits agent output to `feat/<slug>` as work progresses
+- Final step: orchestrator invokes `/create-pr` — creates PR without separate auth
+- **Push to `[DEFAULT_BRANCH]` is FORBIDDEN.** Changes to default branch only via approved PR merge.
+- Pushing `feat/*` branches to open PRs is free — no separate auth needed.
+
+---
+
+## Project Memory rule
+
+`.ai/memory/` (versioned in git) is the primary source for project context.
+Prefer `.ai/memory/` over auto-memory for project-specific facts so context survives across sessions and team members.
+
+---
+
+## Documentation Sync Rule
+
+When coder modifies a critical artifact (entity, handler, endpoint, public contract, schema migration, event, route):
+- **Reviewer MUST check** if any doc in `docs/` needs update and report as IMPORTANT finding
+- Reviewer does NOT update the doc — only flags it
+
+For doc-only tasks: `coder (updates docs) → explorer (cross-check with exact counts)`
+
+---
+
+## Compaction Guidance
+
+When compacting (auto or manual `/compact`), ALWAYS preserve:
+- List of modified files and their purpose
+- Current plan phase and pending decisions
+- Test results (pass/fail counts, which tests)
+- Architectural decisions already confirmed by user
+- Any blockers or open questions
+
+Compact proactively at ~60% context usage — don't wait for auto-compact at 95%.
 
 ---
 
@@ -781,7 +858,25 @@ Write calibrated agents to `.claude/agents/`.
 
 ### Step 4 — `.claude/rules/` (AI-generated per stack)
 
+### Universal rules — copy from templates
+
+Before generating per-stack rule files, copy these universal rules from `~/.claude/skills/crewkit-setup/templates/rules/` to `.claude/rules/`:
+
+- `plan-validation-flow.md` — single source of truth for `/validate-plan` behavior (always copy)
+- `research-discipline.md` — stack-pinned external evidence policy (always copy; substitute `{{project_precedent}}` with empty string for first run; user can add precedents over time)
+
+These rules are referenced by the `validate-plan`, `explore-and-plan`, and `hotfix` skills.
+
 Generate one rule file per detected stack. Rules are enforced when the AI edits files in the relevant directories.
+
+**Rule file structure (per stack):**
+
+Split rules into two clearly labeled sections:
+- `## Coder Rules` — what to do/avoid when WRITING code in this stack
+- `## Reviewer Rules` — what to CHECK in PRs touching this stack
+
+Use **bold** for high-severity rules (e.g., `**SQL injection:**`, `**State machine integrity:**`).
+For state machines, document inline: states, valid transitions, terminal states, guard conditions.
 
 Each rule file:
 ```markdown
@@ -866,7 +961,9 @@ Generate dynamically from scan results. The allow list has 3 layers:
       { "hooks": [{ "type": "command", "command": "bash .claude/hooks/session-start.sh" }] }
     ],
     "PreToolUse": [
-      { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "bash .claude/hooks/protect-sensitive-files.sh" }] }
+      { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "bash .claude/hooks/protect-sensitive-files.sh" }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "bash .claude/hooks/protect-pr-and-main.sh" }] },
+      { "matcher": "Task", "hooks": [{ "type": "command", "command": "node .claude/hooks/check-plan-validated.js" }] }
     ],
     "PostCompact": [
       { "hooks": [{ "type": "command", "command": "bash .claude/hooks/post-compact-recovery.sh" }] }
@@ -877,6 +974,8 @@ Generate dynamically from scan results. The allow list has 3 layers:
   }
 }
 ```
+
+**Note:** PreToolUse Bash hook (`protect-pr-and-main.sh`) only if `pr_first_workflow=true` AND `gh` CLI is available.
 
 Combine all three layers into a single `settings.json`. The result should look like a complete, valid JSON file with permissions + hooks.
 
@@ -903,11 +1002,13 @@ Combine all three layers into a single `settings.json`. The result should look l
 
 ### Step 6 — `.claude/hooks/` (templates + variable substitution)
 
-Read all 4 hook templates from `~/.claude/skills/crewkit-setup/templates/hooks/`:
+Read all 6 hook templates from `~/.claude/skills/crewkit-setup/templates/hooks/`:
 - `session-start.sh`
 - `protect-sensitive-files.sh`
 - `post-compact-recovery.sh`
 - `stop-quality-gate.sh`
+- `protect-pr-and-main.sh` (conditional — only if `pr_first_workflow=true` AND `gh` CLI detected)
+- `check-plan-validated.js` (always)
 
 For each hook template, substitute the placeholders:
 
@@ -942,7 +1043,37 @@ For each hook template, substitute the placeholders:
 
    For multi-stack projects, generate one check block per stack.
 
+**`{{build_gate}}` expansion guidance:**
+
+For each detected stack from Phase 1, append a check block to `stop-quality-gate.sh`. Each block:
+1. Greps `git diff --name-only HEAD` (and `--cached`) for files matching that stack's source extensions
+2. If matched files exist, runs the detected build command from `commands.md`
+3. On failure: print top 20 lines of error output, `exit 1`
+
+Example for a multi-stack project (.NET + Node.js):
+- Block 1: check `*.cs` → `dotnet build`
+- Block 2: check `*.{js,ts}` in gateway path → `node --check` or `npm run build`
+
+Hardcoding paths is acceptable here — the file is generated, not template.
+
 Write calibrated hooks to `.claude/hooks/`.
+
+---
+
+### Step 6a — `.claude/scripts/` (validate-plan)
+
+If `validate-plan` skill will be generated (always, when `.claude/skills/` is being generated), copy the deterministic validator script:
+
+Source: `~/.claude/skills/crewkit-setup/scripts/validate-plan.js`
+Target: `.claude/scripts/validate-plan.js`
+
+Make it executable (`chmod +x`). Set ENV var name documentation: `CREWKIT_VALIDATE_ALLOW_COMMAND=1` to enable `command_output_contains` claim type. Default disabled.
+
+This script is referenced by:
+- The `/validate-plan` skill (thin wrapper)
+- `/explore-and-plan` Step 6 (auto-validate)
+- `/full-workflow` Step 0.5 (gate before coder)
+- `.claude/hooks/check-plan-validated.js` (PreToolUse hook)
 
 ---
 
@@ -953,6 +1084,8 @@ Read all core skill templates from `~/.claude/skills/crewkit-setup/templates/ski
 - `hotfix/SKILL.md`
 - `explore-and-plan/SKILL.md`
 - `review-pr/SKILL.md`
+- `validate-plan/SKILL.md`  — always copy
+- `create-pr/SKILL.md`       — conditional: only if `pr_first_workflow` detected in Phase 1
 
 Copy each skill template to `.claude/skills/[name]/SKILL.md`. **If the template has a `references/` subdirectory, copy it too.**
 
@@ -1082,8 +1215,9 @@ After all generation steps, run the **Completion Checklist** (at the bottom of t
 - `.claude/agents/` — 5 agents (explorer, architect, coder, tester, reviewer)
 - `.claude/rules/` — [N] rule files ([list stacks])
 - `.claude/settings.json` — permissions + hooks
-- `.claude/hooks/` — 4 hooks (session-start, protect-sensitive, post-compact, stop-quality-gate)
-- `.claude/skills/` — 4 skills (full-workflow, hotfix, explore-and-plan, review-pr)
+- `.claude/hooks/` — 6 hooks (session-start, protect-sensitive, post-compact, stop-quality-gate, check-plan-validated, protect-pr-and-main [if pr_first_workflow])
+- `.claude/scripts/` — 1 script (validate-plan.js)
+- `.claude/skills/` — 5-6 skills (full-workflow, hotfix, explore-and-plan, review-pr, validate-plan, create-pr [if pr_first_workflow])
 - `.claude/napkin.md` — priorities board
 - `.claude/QUICKSTART.md` — onboarding guide
 - `.mcp.json` — [N] MCP servers
@@ -1144,7 +1278,13 @@ Before presenting the Final Report, go through EVERY item. Fix failures before r
 - [ ] `.mcp.json` — read back, verify valid JSON, has context7
 - [ ] `.claude/hooks/*.sh` — run `bash -n` on each, all 4 pass syntax check
 - [ ] `.claude/rules/` — at least 1 per detected stack, glob patterns match real files in project
-- [ ] `.claude/skills/` — all 4 core skills have SKILL.md
+- [ ] `.claude/rules/plan-validation-flow.md` — exists (universal rule)
+- [ ] `.claude/rules/research-discipline.md` — exists (universal rule)
+- [ ] `.claude/scripts/validate-plan.js` — exists and is executable
+- [ ] `.claude/skills/` — all core skills have SKILL.md (full-workflow, hotfix, explore-and-plan, review-pr, validate-plan)
+- [ ] `.claude/skills/validate-plan/` — exists
+- [ ] `.claude/hooks/check-plan-validated.js` — exists
+- [ ] If `pr_first_workflow=true`: `.claude/skills/create-pr/` and `.claude/hooks/protect-pr-and-main.sh` exist
 
 ### Content checks (Copilot — only if Copilot is a selected target)
 - [ ] `.github/copilot-instructions.md` — exists, contains project hard rules, no Claude-specific sections
