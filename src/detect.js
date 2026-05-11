@@ -12,13 +12,8 @@ export function detectTools() {
   }
 
   if (existsSync(join(home, '.copilot'))) {
-    const dest = join(home, '.copilot', 'agents');
-    tools.push({ id: 'copilot', name: 'GitHub Copilot', dest, versionFile: join(dest, 'crewkit-setup.version') });
-  }
-
-  if (existsSync(join(home, '.cursor'))) {
-    const dest = join(home, '.cursor');
-    tools.push({ id: 'cursor', name: 'Cursor', dest, versionFile: join(dest, 'crewkit-setup.version') });
+    const dest = join(home, '.copilot', 'skills', 'crewkit-setup');
+    tools.push({ id: 'copilot', name: 'GitHub Copilot', dest, versionFile: join(dest, '.version') });
   }
 
   return tools;
